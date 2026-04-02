@@ -32,7 +32,11 @@ const Register = ({ onSwitchToLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    const { confirmPassword, ...registerData } = formData;
+    const registerData = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    };
     await register(registerData);
   };
 

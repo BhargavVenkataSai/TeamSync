@@ -24,7 +24,6 @@ import {
 export const useSocket = () => {
   const { token } = useAuthStore();
   const { addTask, updateTaskInStore, removeTask } = useTaskStore();
-  const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
@@ -69,15 +68,11 @@ export const useSocket = () => {
   useEffect(() => {
     if (!token) {
       disconnectSocket();
-      setSocket(null);
-      setIsConnected(false);
-      setOnlineUsers([]);
       return;
     }
 
     // Initialize socket connection
     const socketClient = initSocket(token);
-    setSocket(socketClient);
 
     // Handle connection state
     const handleConnect = () => setIsConnected(true);
@@ -92,11 +87,6 @@ export const useSocket = () => {
     onTaskDeleted(socketClient, handleTaskDeleted);
     onUsersOnline(socketClient, handleUsersOnline);
     onUserStatusChange(socketClient, handleUserStatus);
-
-    // Set initial connection state
-    if (socketClient.connected) {
-      setIsConnected(true);
-    }
 
     // Cleanup on unmount
     return () => {
@@ -122,7 +112,11 @@ export const useSocket = () => {
     handleUserStatus,
   ]);
 
-  return { socket, isConnected, onlineUsers };
+  return {
+    socket: token ? getSocket() : null,
+    isConnected: token ? isConnected : false,
+    onlineUsers: token ? onlineUsers : [],
+  };
 };
 
 export default useSocket;

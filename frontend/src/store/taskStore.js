@@ -135,7 +135,7 @@ export const useTaskStore = create((set, get) => ({
       const response = await tasksAPI.getStats();
       set({ stats: response.data.data.stats });
       return { success: true };
-    } catch (error) {
+    } catch {
       return { success: false };
     }
   },

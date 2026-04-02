@@ -1,7 +1,7 @@
 // Project: TeamSync - Real-time Task Management
 // File: TaskFilters component with inline styles
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Search, Filter, X, ChevronDown, SlidersHorizontal } from 'lucide-react';
 
 const defaultFilters = {
@@ -12,11 +12,7 @@ const defaultFilters = {
 
 const TaskFilters = ({ filters = defaultFilters, onFilterChange = () => {} }) => {
   const [showFilters, setShowFilters] = useState(false);
-  const [localFilters, setLocalFilters] = useState(filters);
-
-  useEffect(() => {
-    setLocalFilters((prev) => ({ ...prev, ...filters }));
-  }, [filters]);
+  const [localFilters, setLocalFilters] = useState({ ...defaultFilters, ...filters });
 
   const handleChange = (key, value) => {
     const newFilters = { ...localFilters, [key]: value };

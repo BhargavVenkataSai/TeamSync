@@ -22,17 +22,6 @@ function App() {
     checkAuth();
   }, [checkAuth, initTheme]);
 
-  useEffect(() => {
-    if (user) {
-      setView('dashboard');
-      return;
-    }
-
-    if (view === 'dashboard') {
-      setView('login');
-    }
-  }, [user, view]);
-
   // Show loading while checking authentication
   if (loading) {
     return (
@@ -81,7 +70,7 @@ function App() {
   }
 
   // Protected dashboard view
-  if (view === 'dashboard' && user) {
+  if (user) {
     return <Dashboard />;
   }
 

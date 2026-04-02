@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import { authAPI } from '../utils/api';
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
   // State
   user: null,
   token: localStorage.getItem('token') || null,
@@ -67,7 +67,7 @@ export const useAuthStore = create((set, get) => ({
         loading: false,
         error: null 
       });
-    } catch (error) {
+    } catch {
       localStorage.removeItem('token');
       set({ 
         user: null, 
