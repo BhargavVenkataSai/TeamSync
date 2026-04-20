@@ -1,6 +1,8 @@
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, LineChart, Line } from "recharts";
+import { useState, useEffect } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, Line } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart";
+import { useTaskStore } from "../../store/taskStore";
 
 const chartConfig = {
   hours: {
@@ -13,23 +15,35 @@ const chartConfig = {
   },
 };
 
+// Fallback mock data when no real data is available
+const fallbackData = [
+  { name: "Mon", hours: 6, productivity: 85 },
+  { name: "Tue", hours: 8, productivity: 92 },
+  { name: "Wed", hours: 7, productivity: 88 },
+  { name: "Thu", hours: 9, productivity: 95 },
+  { name: "Fri", hours: 5, productivity: 78 },
+  { name: "Sat", hours: 2, productivity: 60 },
+  { name: "Sun", hours: 0, productivity: 0 },
+];
+
 export function ProductivityChart({ data }) {
-  // Mock data if none provided
-  const chartData = data || [
-    { name: "Mon", hours: 6, productivity: 85 },
-    { name: "Tue", hours: 8, productivity: 92 },
-    { name: "Wed", hours: 7, productivity: 88 },
-    { name: "Thu", hours: 9, productivity: 95 },
-    { name: "Fri", hours: 5, productivity: 78 },
-    { name: "Sat", hours: 2, productivity: 60 },
-    { name: "Sun", hours: 0, productivity: 0 },
-  ];
+  const { stats } = useTaskStore();
+
+  // Use real weekly productivity data from stats if available, fallback to prop, then mock
+  const chartData = stats?.weeklyProductivity || data || fallbackData;
 
   return (
     <Card className="w-full border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
       <CardHeader>
         <CardTitle>Developer Productivity</CardTitle>
-        <CardDescription>Hours worked vs Productivity score</CardDescription>
+        <CardDescription>
+          Hours worked vs Productivity score
+          {stats?.recentCompletions != null && (
+            <span className="ml-2 text-emerald-500 font-medium">
+              · {stats.recentCompletions} tasks completed this week
+            </span>
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">

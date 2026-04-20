@@ -351,7 +351,13 @@ const getTaskStats = async (req, res) => {
   try {
     const accessFilter = buildAccessFilter(req.user._id);
 
-    const [statusStats, priorityStats, overdueTasks, totalTasks, timeLogStats] = await Promise.all([
+    // Calculate start of the past 7 days
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const [statusStats, priorityStats, overdueTasks, totalTasks, timeLogStats, weeklyTimeLogs, weeklyCompletions] = await Promise.all([
       Task.aggregate([
         { $match: accessFilter },
         { $group: { _id: '$status', count: { $sum: 1 } } },
@@ -370,7 +376,78 @@ const getTaskStats = async (req, res) => {
         { $match: { userId: req.user._id } },
         { $group: { _id: null, totalMinutes: { $sum: '$durationMinutes' } } }
       ]),
+      // Weekly time logs grouped by day
+      TimeLog.aggregate([
+        {
+          $match: {
+            userId: req.user._id,
+            startTime: { $gte: sevenDaysAgo },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$startTime' },
+              month: { $month: '$startTime' },
+              day: { $dayOfMonth: '$startTime' },
+            },
+            totalMinutes: { $sum: '$durationMinutes' },
+          },
+        },
+      ]),
+      // Weekly task completions grouped by day
+      Task.aggregate([
+        {
+          $match: {
+            ...accessFilter,
+            status: 'done',
+            updatedAt: { $gte: sevenDaysAgo },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$updatedAt' },
+              month: { $month: '$updatedAt' },
+              day: { $dayOfMonth: '$updatedAt' },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
     ]);
+
+    // Build lookup maps for weekly data
+    const timeMap = {};
+    weeklyTimeLogs.forEach((item) => {
+      const key = `${item._id.year}-${item._id.month}-${item._id.day}`;
+      timeMap[key] = item.totalMinutes;
+    });
+
+    const completionMap = {};
+    weeklyCompletions.forEach((item) => {
+      const key = `${item._id.year}-${item._id.month}-${item._id.day}`;
+      completionMap[key] = item.count;
+    });
+
+    // Generate weekly productivity array
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeklyProductivity = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(sevenDaysAgo);
+      date.setDate(date.getDate() + i);
+      const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+      const minutes = timeMap[key] || 0;
+      const completed = completionMap[key] || 0;
+      weeklyProductivity.push({
+        name: dayNames[date.getDay()],
+        hours: parseFloat((minutes / 60).toFixed(1)),
+        tasksCompleted: completed,
+        productivity: Math.min(100, Math.round((minutes / 60) * 8 + completed * 15)),
+      });
+    }
+
+    const recentCompletions = weeklyCompletions.reduce((sum, d) => sum + d.count, 0);
 
     const stats = {
       total: totalTasks,
@@ -386,6 +463,8 @@ const getTaskStats = async (req, res) => {
       },
       overdue: overdueTasks,
       totalHoursLogged: timeLogStats.length > 0 ? (timeLogStats[0].totalMinutes / 60).toFixed(1) : 0,
+      recentCompletions,
+      weeklyProductivity,
     };
 
     statusStats.forEach((item) => {

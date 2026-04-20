@@ -74,4 +74,18 @@ export const activitiesAPI = {
   getByTask: (taskId, params) => API.get(`/activities/task/${taskId}`, { params }),
 };
 
+// Users API methods
+export const usersAPI = {
+  updateProfile: (data) => API.put('/users/profile', data),
+  changePassword: (data) => API.put('/users/password', data),
+  getById: (id) => API.get(`/users/${id}`),
+};
+
+// Time Logs API methods
+export const timelogsAPI = {
+  getAll: (params) => API.get('/timelogs', { params }),
+  getSummary: (params) => API.get('/timelogs/summary', { params }),
+  delete: (id) => API.delete(`/timelogs/${id}`),
+};
+
 export default API;

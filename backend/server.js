@@ -93,6 +93,8 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/activities', require('./routes/activities'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/timelogs', require('./routes/timelogs'));
 
 // 404 handler
 app.use((req, res, next) => {
@@ -119,9 +121,12 @@ setupSocket(io);
 // Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`\n🚀 Server running on port ${PORT}`);
+  console.log(`➜  Local:   http://localhost:${PORT}`);
+  console.log(`➜  API:     http://localhost:${PORT}/api`);
+  console.log(`➜  Health:  http://localhost:${PORT}/health`);
   console.log(`📡 Socket.io enabled`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}\n`);
 });
 
 // Handle unhandled promise rejections

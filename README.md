@@ -156,21 +156,59 @@ teamsync/
 ### Authentication
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | /api/auth/register | Register new user | No |
-| POST | /api/auth/login | Login user | No |
-| GET | /api/auth/me | Get current user | Yes |
-| POST | /api/auth/logout | Logout user | Yes |
-| GET | /api/auth/users | Get all users | Yes |
+| POST | `/api/auth/register` | Register new user | No |
+| POST | `/api/auth/login` | Login user | No |
+| GET | `/api/auth/me` | Get current user | Yes |
+| POST | `/api/auth/logout` | Logout user | Yes |
+| GET | `/api/auth/users` | Get all users | Yes |
+
+### User Profile
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| PUT | `/api/users/profile` | Update profile (name, email, avatar) | Yes |
+| PUT | `/api/users/password` | Change password | Yes |
+| GET | `/api/users/:id` | Get user by ID | Yes |
 
 ### Tasks
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | /api/tasks | Get all tasks | Yes |
-| POST | /api/tasks | Create task | Yes |
-| GET | /api/tasks/:id | Get task by ID | Yes |
-| PUT | /api/tasks/:id | Update task | Yes |
-| DELETE | /api/tasks/:id | Delete task | Yes |
-| GET | /api/tasks/stats | Get task statistics | Yes |
+| GET | `/api/tasks` | Get all tasks (with filters & pagination) | Yes |
+| POST | `/api/tasks` | Create task | Yes |
+| GET | `/api/tasks/stats` | Get task statistics & weekly productivity | Yes |
+| GET | `/api/tasks/:id` | Get task by ID | Yes |
+| PUT | `/api/tasks/:id` | Update task | Yes |
+| DELETE | `/api/tasks/:id` | Delete task | Yes |
+
+### Comments
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/tasks/:id/comments` | Add comment to task | Yes |
+| DELETE | `/api/tasks/:id/comments/:commentId` | Delete comment | Yes |
+
+### Attachments
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/tasks/:id/attachments` | Upload attachment (multipart) | Yes |
+| DELETE | `/api/tasks/:id/attachments/:attachmentId` | Delete attachment | Yes |
+
+### Timer
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/tasks/:id/timer/start` | Start task timer | Yes |
+| POST | `/api/tasks/:id/timer/stop` | Stop timer & log time | Yes |
+
+### Time Logs
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/timelogs` | Get time logs (with filters & pagination) | Yes |
+| GET | `/api/timelogs/summary` | Get daily aggregated summary | Yes |
+| DELETE | `/api/timelogs/:id` | Delete a time log entry | Yes |
+
+### Activity Feed
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/api/activities` | Get recent activity feed | Yes |
+| GET | `/api/activities/task/:taskId` | Get activities for a task | Yes |
 
 ## 🔴 Socket.io Events
 
@@ -180,12 +218,15 @@ teamsync/
 - `task:delete` - Notify others of task deletion
 - `join:task` - Join task-specific room
 - `leave:task` - Leave task-specific room
+- `user:typing` - Typing indicator for task details
 
 ### Server to Client
 - `task:created` - New task created
 - `task:updated` - Task updated
 - `task:deleted` - Task deleted
 - `users:online` - Updated online users list
+- `user:status` - User online/offline status change
+- `user:typing` - User typing indicator
 
 ## 🚀 Deployment
 
