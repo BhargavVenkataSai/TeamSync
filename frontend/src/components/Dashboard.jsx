@@ -1,50 +1,38 @@
-// Project: TeamSync - Real-time Task Management
-// File: Dashboard component with clean, spacious layout
-
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard,
-  ClipboardList,
-  LayoutGrid,
-  LogOut,
-  Menu,
-  X,
-  Wifi,
-  WifiOff,
-  BarChart3,
-  Users,
-  ChevronDown,
-  Moon,
-  Sun,
-  Activity,
+  ClipboardList, LayoutGrid, LogOut, Menu, X, Wifi, WifiOff,
+  BarChart3, Users, ChevronDown, Activity, User, CalendarDays, Timer
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useTaskStore } from '../store/taskStore';
-import { useThemeStore, getThemeColors } from '../store/themeStore';
 import useSocket from '../hooks/useSocket';
 import TaskList from './tasks/TaskList';
 import KanbanBoard from './kanban/KanbanBoard';
 import ActivityFeed from './ActivityFeed';
+import { ThemeToggle } from './ThemeToggle';
+import { ProductivityChart } from './charts/ProductivityChart';
+import CalendarView from './views/CalendarView';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Button } from './ui/button';
+import { Avatar, AvatarFallback } from './ui/avatar';
 
 const Dashboard = () => {
   const [activeView, setActiveView] = useState('tasks');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showOnlineUsers, setShowOnlineUsers] = useState(false);
   const { user, logout } = useAuthStore();
   const { tasks, stats, fetchStats, fetchTasks } = useTaskStore();
   const { isConnected, onlineUsers } = useSocket();
-  const { theme, toggleTheme, initTheme } = useThemeStore();
-  const colors = getThemeColors(theme);
 
   useEffect(() => {
-    initTheme();
     fetchStats();
     fetchTasks();
-  }, [fetchStats, fetchTasks, initTheme]);
+  }, [fetchStats, fetchTasks]);
 
   const navItems = [
     { id: 'tasks', label: 'Task List', icon: ClipboardList },
     { id: 'kanban', label: 'Kanban Board', icon: LayoutGrid },
+    { id: 'calendar', label: 'Calendar', icon: CalendarDays },
     { id: 'activity', label: 'Activity Feed', icon: Activity },
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
   ];
@@ -58,50 +46,45 @@ const Dashboard = () => {
     switch (activeView) {
       case 'kanban':
         return <KanbanBoard tasks={tasks} onTaskUpdate={fetchTasks} />;
+      case 'calendar':
+        return <CalendarView tasks={tasks} />;
       case 'activity':
         return <ActivityFeed />;
       case 'stats':
-        return <StatsView stats={stats} colors={colors} />;
+        return <StatsView stats={stats} />;
       default:
         return <TaskList />;
     }
   };
 
-  const styles = getStyles(colors);
-
   return (
-    <div style={styles.container}>
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Header */}
-      <header style={styles.header}>
-        <div style={styles.headerContent}>
+      <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
+        <div className="flex h-20 items-center justify-between px-6 lg:px-8 max-w-[1400px] mx-auto">
           {/* Left - Logo & Menu */}
-          <div style={styles.headerLeft}>
-            <button 
-              onClick={() => setIsSidebarOpen(true)} 
-              style={styles.menuButton}
-            >
-              <Menu size={22} />
-            </button>
+          <div className="flex items-center gap-6">
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="h-6 w-6" />
+            </Button>
             
-            <div style={styles.logo}>
-              <div style={styles.logoIcon}>
-                <LayoutDashboard size={20} color="#fff" />
-              </div>
-              <span style={styles.logoText}>TeamSync</span>
+            <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setActiveView('tasks')}>
+              <img src="/teamsync-logo.png" alt="TeamSync" className="h-10 w-auto group-hover:scale-105 transition-transform duration-300" />
             </div>
 
             {/* Desktop Navigation */}
-            <nav style={styles.desktopNav}>
+            <nav className="hidden md:flex items-center gap-2 ml-8 bg-muted/40 p-1.5 rounded-xl border border-border/50">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveView(item.id)}
-                  style={{
-                    ...styles.navItem,
-                    ...(activeView === item.id ? styles.navItemActive : {}),
-                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    activeView === item.id 
+                    ? 'bg-background shadow-md text-primary' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
                 >
-                  <item.icon size={18} />
+                  <item.icon className="h-4 w-4" />
                   <span>{item.label}</span>
                 </button>
               ))}
@@ -109,138 +92,129 @@ const Dashboard = () => {
           </div>
 
           {/* Right - Status & User */}
-          <div style={styles.headerRight}>
+          <div className="flex items-center gap-4">
+            {/* Connection Status - Desktop only */}
+            <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+              isConnected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+            }`}>
+              {isConnected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+              <span>{isConnected ? 'Connected' : 'Offline'}</span>
+            </div>
+
             {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              style={styles.themeToggle}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
+            <ThemeToggle />
 
-            {/* Connection Status */}
-            <div style={{
-              ...styles.connectionBadge,
-              background: isConnected ? colors.successBg : colors.errorBg,
-              color: isConnected ? '#16a34a' : '#dc2626',
-            }}>
-              {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
-              <span style={styles.connectionText}>
-                {isConnected ? 'Connected' : 'Offline'}
-              </span>
-            </div>
-
-            {/* Online Users Dropdown */}
-            <div style={styles.onlineUsersWrapper}>
-              <button 
-                onClick={() => setShowOnlineUsers(!showOnlineUsers)}
-                style={styles.onlineUsersButton}
-              >
-                <Users size={18} />
-                <span style={styles.onlineCount}>{onlineUsers.length}</span>
-                <ChevronDown size={16} style={{
-                  transform: showOnlineUsers ? 'rotate(180deg)' : 'rotate(0)',
-                  transition: 'transform 0.2s',
-                }} />
-              </button>
-
-              {/* Dropdown */}
-              {showOnlineUsers && (
-                <>
-                  <div 
-                    style={styles.dropdownOverlay} 
-                    onClick={() => setShowOnlineUsers(false)} 
-                  />
-                  <div style={styles.onlineUsersDropdown}>
-                    <div style={styles.dropdownHeader}>
-                      <span style={styles.dropdownTitle}>Online Team Members</span>
-                      <span style={styles.dropdownCount}>{onlineUsers.length} online</span>
-                    </div>
-                    <div style={styles.dropdownList}>
-                      {onlineUsers.length > 0 ? (
-                        onlineUsers.map((u) => (
-                          <div key={u._id || u.id} style={styles.dropdownItem}>
-                            <div style={styles.dropdownAvatar}>
-                              {getInitials(u.name)}
-                            </div>
-                            <div style={styles.dropdownUserInfo}>
-                              <span style={styles.dropdownUserName}>{u.name}</span>
-                              <span style={styles.dropdownUserEmail}>{u.email}</span>
-                            </div>
-                            <div style={styles.onlineDot} />
-                          </div>
-                        ))
-                      ) : (
-                        <div style={styles.dropdownEmpty}>
-                          No other users online
+            {/* Online Users */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 rounded-full border-border/50 bg-background hover:bg-accent px-3">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+                    {onlineUsers.length}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-2 rounded-xl">
+                <DropdownMenuLabel className="text-xs uppercase text-muted-foreground">Online Team ({onlineUsers.length})</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="max-h-60 overflow-y-auto pr-1">
+                  {onlineUsers.length > 0 ? (
+                    onlineUsers.map((u) => (
+                      <div key={u._id || u.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
+                        <Avatar className="h-8 w-8 border border-border/50">
+                          <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-[10px] text-white">
+                            {getInitials(u.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-none truncate">{u.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate mt-1">{u.email}</p>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_2px_rgba(16,185,129,0.2)]" />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">No others online</div>
+                  )}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="h-6 w-px bg-border mx-1 hidden sm:block"></div>
 
             {/* User Menu */}
-            <div style={styles.userMenu}>
-              <div style={styles.userInfo}>
-                <span style={styles.userName}>{user?.name}</span>
-                <span style={styles.userEmail}>{user?.email}</span>
-              </div>
-              <div style={styles.userAvatar}>
-                {getInitials(user?.name)}
-              </div>
-              <button onClick={logout} style={styles.logoutBtn} title="Logout">
-                <LogOut size={18} />
-              </button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-12 w-12 rounded-full ml-2 focus-visible:ring-0 focus-visible:ring-offset-0">
+                  <Avatar className="h-12 w-12 border-2 border-primary/20 hover:border-primary transition-colors">
+                    <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold text-base">
+                      {getInitials(user?.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-3 rounded-2xl">
+                <div className="flex items-center justify-start gap-4 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-semibold text-base">{user?.name}</p>
+                    <p className="text-sm text-muted-foreground truncate max-w-[200px]">{user?.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuItem className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive rounded-xl p-3" onClick={logout}>
+                  <LogOut className="mr-3 h-5 w-5" />
+                  <span className="font-medium">Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
 
       {/* Mobile Sidebar */}
       {isSidebarOpen && (
-        <div style={styles.sidebarOverlay} onClick={() => setIsSidebarOpen(false)}>
-          <div style={styles.sidebar} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.sidebarHeader}>
-              <span style={styles.sidebarTitle}>Menu</span>
-              <button onClick={() => setIsSidebarOpen(false)} style={styles.sidebarClose}>
-                <X size={20} />
-              </button>
+        <div className="fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
+          <div className="relative w-72 max-w-[80%] bg-card h-full shadow-2xl flex flex-col border-r border-border/50">
+            <div className="flex items-center justify-between p-4 border-b border-border/50">
+              <span className="font-semibold text-lg tracking-tight">Menu</span>
+              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-            <nav style={styles.sidebarNav}>
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => { setActiveView(item.id); setIsSidebarOpen(false); }}
-                  style={{
-                    ...styles.sidebarItem,
-                    ...(activeView === item.id ? styles.sidebarItemActive : {}),
-                  }}
+                  className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    activeView === item.id 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
                 >
-                  <item.icon size={20} />
+                  <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
                 </button>
               ))}
             </nav>
-            <div style={styles.sidebarFooter}>
-              <button onClick={toggleTheme} style={styles.sidebarThemeToggle}>
-                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-              </button>
-              <button onClick={logout} style={styles.sidebarLogout}>
-                <LogOut size={20} />
-                <span>Logout</span>
-              </button>
+            <div className="p-4 border-t border-border/50 space-y-2">
+              <div className="flex items-center justify-between px-2 py-1 mb-2">
+                <span className="text-sm font-medium text-muted-foreground">Theme</span>
+                <ThemeToggle />
+              </div>
+              <Button variant="destructive" className="w-full justify-start rounded-xl" onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      <main style={styles.main}>
-        <div style={styles.mainContent}>
+      <main className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 min-h-[calc(100vh-4rem)]">
+        <div className="animate-in fade-in duration-500">
           {renderContent()}
         </div>
       </main>
@@ -249,586 +223,111 @@ const Dashboard = () => {
 };
 
 // Stats View Component
-const StatsView = ({ stats, colors }) => {
+const StatsView = ({ stats }) => {
   if (!stats) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px 20px', color: colors.textSecondary }}>
+      <div className="flex items-center justify-center h-64 text-muted-foreground animate-pulse">
         Loading statistics...
       </div>
     );
   }
 
   const statusCards = [
-    { label: 'To Do', value: stats.byStatus?.todo || 0, bg: colors.bgTertiary, color: colors.textPrimary, icon: '📋' },
-    { label: 'In Progress', value: stats.byStatus?.['in-progress'] || 0, bg: colors.warningBg, color: '#d97706', icon: '🔄' },
-    { label: 'Completed', value: stats.byStatus?.done || 0, bg: colors.successBg, color: '#15803d', icon: '✅' },
-    { label: 'Overdue', value: stats.overdue || 0, bg: colors.errorBg, color: '#dc2626', icon: '⏰' },
+    { label: 'To Do', value: stats.byStatus?.todo || 0, bg: 'bg-slate-500/10 hover:bg-slate-500/20', color: 'text-slate-500 dark:text-slate-400', border: 'border-slate-500/20', icon: '📋' },
+    { label: 'In Progress', value: stats.byStatus?.['in-progress'] || 0, bg: 'bg-amber-500/10 hover:bg-amber-500/20', color: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/20', icon: '🔄' },
+    { label: 'Completed', value: stats.byStatus?.done || 0, bg: 'bg-emerald-500/10 hover:bg-emerald-500/20', color: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20', icon: '✅' },
+    { label: 'Overdue', value: stats.overdue || 0, bg: 'bg-rose-500/10 hover:bg-rose-500/20', color: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/20', icon: '⏰' },
   ];
 
   const priorityData = [
-    { label: 'High', value: stats.byPriority?.high || 0, color: '#ef4444' },
-    { label: 'Medium', value: stats.byPriority?.medium || 0, color: '#f59e0b' },
-    { label: 'Low', value: stats.byPriority?.low || 0, color: '#3b82f6' },
+    { label: 'High', value: stats.byPriority?.high || 0, color: 'bg-rose-500' },
+    { label: 'Medium', value: stats.byPriority?.medium || 0, color: 'bg-amber-500' },
+    { label: 'Low', value: stats.byPriority?.low || 0, color: 'bg-blue-500' },
   ];
 
-  const statsStyles = {
-    totalCard: {
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-      borderRadius: '20px',
-      padding: '40px',
-      marginBottom: '24px',
-      boxShadow: '0 10px 40px rgba(99, 102, 241, 0.3)',
-    },
-    totalInner: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      color: '#fff',
-    },
-    totalNumber: {
-      fontSize: '56px',
-      fontWeight: '800',
-      lineHeight: 1,
-    },
-    totalLabel: {
-      fontSize: '16px',
-      marginTop: '8px',
-      opacity: 0.9,
-    },
-    grid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-      gap: '16px',
-      marginBottom: '24px',
-    },
-    card: {
-      borderRadius: '16px',
-      padding: '24px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '8px',
-    },
-    cardIcon: {
-      fontSize: '32px',
-    },
-    cardValue: {
-      fontSize: '32px',
-      fontWeight: '700',
-    },
-    cardLabel: {
-      fontSize: '14px',
-      fontWeight: '500',
-    },
-    priorityCard: {
-      background: colors.cardBg,
-      borderRadius: '20px',
-      padding: '28px',
-      boxShadow: colors.cardShadow,
-      border: colors.cardBorder,
-    },
-    priorityTitle: {
-      fontSize: '18px',
-      fontWeight: '600',
-      color: colors.textPrimary,
-      marginBottom: '24px',
-    },
-    priorityList: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '20px',
-    },
-    priorityHeader: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '8px',
-    },
-    priorityLabelGroup: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-    },
-    priorityDot: {
-      width: '12px',
-      height: '12px',
-      borderRadius: '50%',
-    },
-    priorityLabel: {
-      fontSize: '14px',
-      color: colors.textSecondary,
-    },
-    priorityValue: {
-      fontSize: '16px',
-      fontWeight: '600',
-      color: colors.textPrimary,
-    },
-    progressBar: {
-      height: '8px',
-      background: colors.bgTertiary,
-      borderRadius: '4px',
-      overflow: 'hidden',
-    },
-    progressFill: {
-      height: '100%',
-      borderRadius: '4px',
-      transition: 'width 0.5s ease',
-    },
-  };
-
   return (
-    <div>
-      {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', color: colors.textPrimary, margin: 0 }}>
-          Statistics
-        </h1>
-        <p style={{ color: colors.textSecondary, marginTop: '8px', fontSize: '15px' }}>
-          Track your team's productivity and task progress
-        </p>
+    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-bold tracking-tight">Statistics Dashboard</h1>
+        <p className="text-muted-foreground">Track your team's productivity and task progress in real-time.</p>
       </div>
 
-      {/* Total Tasks */}
-      <div style={statsStyles.totalCard}>
-        <div style={statsStyles.totalInner}>
-          <span style={statsStyles.totalNumber}>{stats.total || 0}</span>
-          <span style={statsStyles.totalLabel}>Total Tasks</span>
-        </div>
-      </div>
-
-      {/* Status Grid */}
-      <div style={statsStyles.grid}>
-        {statusCards.map((card) => (
-          <div 
-            key={card.label} 
-            style={{ ...statsStyles.card, background: card.bg }}
-          >
-            <span style={statsStyles.cardIcon}>{card.icon}</span>
-            <span style={{ ...statsStyles.cardValue, color: card.color }}>{card.value}</span>
-            <span style={{ ...statsStyles.cardLabel, color: card.color }}>{card.label}</span>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Total Tasks */}
+        <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-0 shadow-lg shadow-indigo-500/20 overflow-hidden relative">
+          <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+            <BarChart3 className="w-32 h-32" />
           </div>
-        ))}
-      </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-white/80 font-medium">Total Tasks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-5xl font-extrabold tracking-tighter">{stats.total || 0}</div>
+          </CardContent>
+        </Card>
 
-      {/* Priority Breakdown */}
-      <div style={statsStyles.priorityCard}>
-        <h3 style={statsStyles.priorityTitle}>Priority Breakdown</h3>
-        <div style={statsStyles.priorityList}>
-          {priorityData.map((item) => (
-            <div key={item.label}>
-              <div style={statsStyles.priorityHeader}>
-                <div style={statsStyles.priorityLabelGroup}>
-                  <span style={{ ...statsStyles.priorityDot, background: item.color }} />
-                  <span style={statsStyles.priorityLabel}>{item.label} Priority</span>
-                </div>
-                <span style={statsStyles.priorityValue}>{item.value}</span>
-              </div>
-              <div style={statsStyles.progressBar}>
-                <div style={{
-                  ...statsStyles.progressFill,
-                  background: item.color,
-                  width: `${stats.total > 0 ? (item.value / stats.total) * 100 : 0}%`,
-                }} />
-              </div>
-            </div>
+        {/* Status Grid inside a unified layout */}
+        <div className="col-span-1 md:col-span-1 lg:col-span-3 grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {statusCards.map((card) => (
+            <Card key={card.label} className={`${card.bg} ${card.border} border shadow-sm transition-all hover:shadow-md hover:-translate-y-1 duration-300`}>
+              <CardContent className="p-6 flex flex-col items-center justify-center gap-3 h-full">
+                <span className="text-3xl drop-shadow-sm">{card.icon}</span>
+                <span className={`text-3xl font-bold ${card.color}`}>{card.value}</span>
+                <span className={`text-sm font-medium ${card.color} opacity-80`}>{card.label}</span>
+              </CardContent>
+            </Card>
           ))}
         </div>
+      </div>
+
+      {/* Time Tracked Card */}
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm">
+        <CardContent className="p-6 flex items-center gap-5">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+            <Timer className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground font-medium">Total Time Tracked</p>
+            <p className="text-3xl font-extrabold tracking-tighter">{stats.totalHoursLogged || 0} <span className="text-lg font-medium text-muted-foreground">hours</span></p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Priority Breakdown */}
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
+          <CardHeader>
+            <CardTitle>Priority Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {priorityData.map((item) => {
+              const percentage = stats.total > 0 ? (item.value / stats.total) * 100 : 0;
+              return (
+                <div key={item.label} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${item.color} shadow-sm`} />
+                      <span className="text-sm font-medium">{item.label} Priority</span>
+                    </div>
+                    <span className="font-semibold">{item.value} <span className="text-muted-foreground text-xs font-normal">({percentage.toFixed(0)}%)</span></span>
+                  </div>
+                  <div className="h-2 w-full bg-muted overflow-hidden rounded-full">
+                    <div 
+                      className={`h-full rounded-full ${item.color} transition-all duration-1000 ease-out`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        {/* Productivity Chart */}
+        <ProductivityChart />
       </div>
     </div>
   );
 };
-
-// Generate styles based on theme colors
-const getStyles = (colors) => ({
-  container: {
-    minHeight: '100vh',
-    background: colors.bgPrimary,
-  },
-  header: {
-    background: colors.bgSecondary,
-    borderBottom: `1px solid ${colors.border}`,
-    position: 'sticky',
-    top: 0,
-    zIndex: 40,
-  },
-  headerContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '0 24px',
-    height: '70px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '24px',
-  },
-  menuButton: {
-    display: 'none',
-    padding: '10px',
-    background: 'none',
-    border: 'none',
-    color: colors.textSecondary,
-    borderRadius: '10px',
-    cursor: 'pointer',
-  },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  logoIcon: {
-    width: '40px',
-    height: '40px',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-  },
-  logoText: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  desktopNav: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    marginLeft: '24px',
-  },
-  navItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 18px',
-    background: 'none',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: colors.textSecondary,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  navItemActive: {
-    background: colors.primaryLight,
-    color: '#6366f1',
-  },
-  headerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  themeToggle: {
-    padding: '10px',
-    background: colors.bgTertiary,
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    color: colors.textSecondary,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.2s',
-  },
-  connectionBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 14px',
-    borderRadius: '20px',
-    fontSize: '13px',
-    fontWeight: '600',
-  },
-  connectionText: {
-    display: 'inline',
-  },
-  onlineUsersWrapper: {
-    position: 'relative',
-  },
-  onlineUsersButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 14px',
-    background: colors.bgTertiary,
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: colors.textSecondary,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  onlineCount: {
-    background: '#22c55e',
-    color: '#fff',
-    fontSize: '12px',
-    fontWeight: '600',
-    padding: '2px 8px',
-    borderRadius: '10px',
-  },
-  dropdownOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 45,
-  },
-  onlineUsersDropdown: {
-    position: 'absolute',
-    top: 'calc(100% + 8px)',
-    right: 0,
-    width: '300px',
-    background: colors.cardBg,
-    borderRadius: '16px',
-    boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-    border: `1px solid ${colors.border}`,
-    zIndex: 50,
-    overflow: 'hidden',
-  },
-  dropdownHeader: {
-    padding: '16px 20px',
-    borderBottom: `1px solid ${colors.borderLight}`,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dropdownTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  dropdownCount: {
-    fontSize: '12px',
-    color: '#22c55e',
-    fontWeight: '500',
-  },
-  dropdownList: {
-    maxHeight: '280px',
-    overflowY: 'auto',
-  },
-  dropdownItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px 20px',
-    borderBottom: `1px solid ${colors.borderLight}`,
-  },
-  dropdownAvatar: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontSize: '13px',
-    fontWeight: '600',
-  },
-  dropdownUserInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  dropdownUserName: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  dropdownUserEmail: {
-    display: 'block',
-    fontSize: '12px',
-    color: colors.textMuted,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  onlineDot: {
-    width: '10px',
-    height: '10px',
-    background: '#22c55e',
-    borderRadius: '50%',
-    boxShadow: '0 0 0 3px rgba(34, 197, 94, 0.2)',
-  },
-  dropdownEmpty: {
-    padding: '24px',
-    textAlign: 'center',
-    color: colors.textMuted,
-    fontSize: '14px',
-  },
-  userMenu: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    paddingLeft: '16px',
-    borderLeft: `1px solid ${colors.border}`,
-  },
-  userInfo: {
-    textAlign: 'right',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  userName: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  userEmail: {
-    fontSize: '12px',
-    color: colors.textMuted,
-  },
-  userAvatar: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '12px',
-    background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-  logoutBtn: {
-    padding: '10px',
-    background: 'none',
-    border: 'none',
-    color: colors.textMuted,
-    borderRadius: '10px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  sidebarOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.5)',
-    zIndex: 50,
-    display: 'flex',
-  },
-  sidebar: {
-    width: '280px',
-    background: colors.bgSecondary,
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '4px 0 24px rgba(0,0,0,0.1)',
-  },
-  sidebarHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '20px',
-    borderBottom: `1px solid ${colors.borderLight}`,
-  },
-  sidebarTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  sidebarClose: {
-    padding: '8px',
-    background: colors.bgTertiary,
-    border: 'none',
-    borderRadius: '8px',
-    color: colors.textSecondary,
-    cursor: 'pointer',
-  },
-  sidebarNav: {
-    flex: 1,
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  sidebarItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '14px 16px',
-    background: 'none',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: '500',
-    color: colors.textSecondary,
-    cursor: 'pointer',
-    textAlign: 'left',
-    width: '100%',
-  },
-  sidebarItemActive: {
-    background: colors.primaryLight,
-    color: '#6366f1',
-  },
-  sidebarFooter: {
-    padding: '16px',
-    borderTop: `1px solid ${colors.borderLight}`,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  sidebarThemeToggle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '14px 16px',
-    background: colors.bgTertiary,
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: '500',
-    color: colors.textSecondary,
-    cursor: 'pointer',
-    width: '100%',
-  },
-  sidebarLogout: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '14px 16px',
-    background: colors.errorBg,
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
-    fontWeight: '500',
-    color: '#dc2626',
-    cursor: 'pointer',
-    width: '100%',
-  },
-  main: {
-    minHeight: 'calc(100vh - 70px)',
-  },
-  mainContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '32px 24px',
-  },
-});
-
-// Add responsive styles via media query
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @media (max-width: 1024px) {
-    .dashboard-menu-btn { display: flex !important; }
-    .dashboard-desktop-nav { display: none !important; }
-    .dashboard-connection-text { display: none !important; }
-    .dashboard-user-info { display: none !important; }
-  }
-  @media (max-width: 640px) {
-    .dashboard-user-menu { padding-left: 12px !important; }
-  }
-`;
-if (typeof document !== 'undefined') {
-  document.head.appendChild(styleSheet);
-}
 
 export default Dashboard;

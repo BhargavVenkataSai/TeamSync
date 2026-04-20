@@ -115,6 +115,17 @@ const taskSchema = new mongoose.Schema(
       type: [attachmentSchema],
       default: [],
     },
+    // Subtasks feature
+    parentTaskId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Task',
+      default: null,
+    },
+    // Time tracking feature
+    activeTimerStart: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -6,6 +6,7 @@
 
 const Task = require('../models/Task');
 const ActivityLog = require('../models/ActivityLog');
+const TimeLog = require('../models/TimeLog');
 
 const buildAccessFilter = (userId) => ({
   $or: [{ createdBy: userId }, { assignedTo: userId }],
@@ -39,7 +40,7 @@ const logActivity = async (data) => {
 // @access  Private
 const createTask = async (req, res) => {
   try {
-    const { title, description, status, priority, assignedTo, dueDate, tags } =
+    const { title, description, status, priority, assignedTo, dueDate, tags, parentTaskId } =
       req.body;
 
     const task = await Task.create({
@@ -51,6 +52,7 @@ const createTask = async (req, res) => {
       createdBy: req.user._id,
       dueDate: dueDate || null,
       tags: Array.isArray(tags) ? tags : [],
+      parentTaskId: parentTaskId || null,
     });
 
     await task.populate([
@@ -225,7 +227,7 @@ const updateTask = async (req, res) => {
       assignedTo: task.assignedTo,
     };
 
-    const { title, description, status, priority, assignedTo, dueDate, tags } =
+    const { title, description, status, priority, assignedTo, dueDate, tags, parentTaskId } =
       req.body;
 
     if (title !== undefined) task.title = title;
@@ -235,6 +237,7 @@ const updateTask = async (req, res) => {
     if (assignedTo !== undefined) task.assignedTo = assignedTo || null;
     if (dueDate !== undefined) task.dueDate = dueDate || null;
     if (tags !== undefined) task.tags = Array.isArray(tags) ? tags : task.tags;
+    if (parentTaskId !== undefined) task.parentTaskId = parentTaskId || null;
 
     await task.save();
 
@@ -348,7 +351,7 @@ const getTaskStats = async (req, res) => {
   try {
     const accessFilter = buildAccessFilter(req.user._id);
 
-    const [statusStats, priorityStats, overdueTasks, totalTasks] = await Promise.all([
+    const [statusStats, priorityStats, overdueTasks, totalTasks, timeLogStats] = await Promise.all([
       Task.aggregate([
         { $match: accessFilter },
         { $group: { _id: '$status', count: { $sum: 1 } } },
@@ -363,6 +366,10 @@ const getTaskStats = async (req, res) => {
         status: { $ne: 'done' },
       }),
       Task.countDocuments(accessFilter),
+      TimeLog.aggregate([
+        { $match: { userId: req.user._id } },
+        { $group: { _id: null, totalMinutes: { $sum: '$durationMinutes' } } }
+      ]),
     ]);
 
     const stats = {
@@ -378,6 +385,7 @@ const getTaskStats = async (req, res) => {
         high: 0,
       },
       overdue: overdueTasks,
+      totalHoursLogged: timeLogStats.length > 0 ? (timeLogStats[0].totalMinutes / 60).toFixed(1) : 0,
     };
 
     statusStats.forEach((item) => {
@@ -691,6 +699,56 @@ const deleteAttachment = async (req, res) => {
   }
 };
 
+// @desc    Start task timer
+// @route   POST /api/tasks/:id/timer/start
+// @access  Private
+const startTimer = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+    if (!hasTaskAccess(task, req.user._id)) return res.status(403).json({ success: false, message: 'Not authorized' });
+
+    task.activeTimerStart = new Date();
+    await task.save();
+
+    return res.status(200).json({ success: true, data: { task } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Server error starting timer' });
+  }
+};
+
+// @desc    Stop task timer
+// @route   POST /api/tasks/:id/timer/stop
+// @access  Private
+const stopTimer = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+    if (!hasTaskAccess(task, req.user._id)) return res.status(403).json({ success: false, message: 'Not authorized' });
+
+    if (task.activeTimerStart) {
+      const endTime = new Date();
+      const startTime = task.activeTimerStart;
+      const durationMinutes = Math.max(1, Math.round((endTime - startTime) / 60000)); // Minimum 1 minute
+
+      await TimeLog.create({
+        taskId: task._id,
+        userId: req.user._id,
+        startTime,
+        endTime,
+        durationMinutes
+      });
+
+      task.activeTimerStart = null;
+      await task.save();
+    }
+
+    return res.status(200).json({ success: true, data: { task } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Server error stopping timer' });
+  }
+};
+
 module.exports = {
   createTask,
   getTasks,
@@ -702,4 +760,6 @@ module.exports = {
   deleteComment,
   addAttachment,
   deleteAttachment,
+  startTimer,
+  stopTimer,
 };

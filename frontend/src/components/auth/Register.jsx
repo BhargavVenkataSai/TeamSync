@@ -1,13 +1,11 @@
-// Project: TeamSync - Real-time Task Management
-// File: Register component with modern glassmorphism design
-
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { UserPlus, Mail, Lock, User, Loader2, Sparkles, Check, X } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, X as XIcon } from 'lucide-react';
 
 const Register = ({ onSwitchToLogin }) => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-  const [focused, setFocused] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState('');
   const { register, loading, error, clearError } = useAuthStore();
 
@@ -32,355 +30,282 @@ const Register = ({ onSwitchToLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    const registerData = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-    };
-    await register(registerData);
+    await register({ name: formData.name, email: formData.email, password: formData.password });
   };
 
   const displayError = validationError || error;
-  
-  // Password strength indicators
+
   const passwordChecks = [
     { label: 'At least 6 characters', valid: formData.password.length >= 6 },
     { label: 'Passwords match', valid: formData.password && formData.confirmPassword && formData.password === formData.confirmPassword },
   ];
 
-  const fields = [
-    { name: 'name', label: 'Full Name', type: 'text', icon: User, placeholder: 'John Doe' },
-    { name: 'email', label: 'Email Address', type: 'email', icon: Mail, placeholder: 'you@example.com' },
-    { name: 'password', label: 'Password', type: 'password', icon: Lock, placeholder: '••••••••' },
-    { name: 'confirmPassword', label: 'Confirm Password', type: 'password', icon: Lock, placeholder: '••••••••' },
-  ];
-
   return (
-    <div style={styles.container}>
-      {/* Animated background orbs */}
-      <div style={styles.bgOrb1} />
-      <div style={styles.bgOrb2} />
-      <div style={styles.bgOrb3} />
-      
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(30px, -30px) scale(1.05); }
-        }
-        input::placeholder { color: rgba(255,255,255,0.35); }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+    <div className="cube-login-page">
+      {/* Floating particles */}
+      <div className="cube-particles">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="cube-particle" style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${i * 1.5}s`,
+            animationDuration: `${8 + Math.random() * 6}s`,
+          }} />
+        ))}
+      </div>
 
-      <div style={styles.wrapper}>
-        {/* Logo Section */}
-        <div style={styles.logoSection}>
-          <div style={styles.logoBox}>
-            <svg style={styles.logoIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-              />
-            </svg>
-            <Sparkles style={styles.sparkle} />
-          </div>
-          <h1 style={styles.title}>Join TeamSync</h1>
-          <p style={styles.subtitle}>Create your account to get started</p>
+      <div className="cube-form-wrapper">
+        {/* Logo */}
+        <div className="cube-logo">
+          <img src="/teamsync-logo.png" alt="TeamSync" className="cube-logo-img" />
         </div>
 
-        {/* Register Card */}
-        <div style={styles.card}>
-          <form onSubmit={handleSubmit}>
-            {displayError && (
-              <div style={styles.errorBox}>
-                <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {displayError}
-              </div>
-            )}
+        <h2 className="cube-title">Create Account</h2>
 
-            {fields.map((field) => (
-              <div key={field.name} style={styles.fieldGroup}>
-                <label style={styles.label}>{field.label}</label>
-                <div style={styles.inputWrapper}>
-                  <field.icon style={{
-                    ...styles.inputIcon,
-                    color: focused === field.name ? '#c084fc' : 'rgba(255,255,255,0.4)',
-                  }} />
-                  <input
-                    type={field.type}
-                    name={field.name}
-                    value={formData[field.name]}
-                    onChange={handleChange}
-                    onFocus={() => setFocused(field.name)}
-                    onBlur={() => setFocused('')}
-                    required
-                    placeholder={field.placeholder}
-                    style={{
-                      ...styles.input,
-                      border: `2px solid ${focused === field.name ? 'rgba(168, 85, 247, 0.8)' : 'rgba(255, 255, 255, 0.1)'}`,
-                      boxShadow: focused === field.name ? '0 0 0 4px rgba(168, 85, 247, 0.15), 0 8px 20px rgba(0,0,0,0.2)' : '0 4px 12px rgba(0,0,0,0.1)',
-                    }}
-                  />
+        {displayError && (
+          <div className="cube-error">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {displayError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="cube-form">
+          {/* Name */}
+          <div className="block-cube block-input">
+            <input type="text" name="name" placeholder="Full name" required value={formData.name} onChange={handleChange} autoComplete="name" />
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg"><div className="bg-inner" /></div>
+          </div>
+
+          {/* Email */}
+          <div className="block-cube block-input">
+            <input type="email" name="email" placeholder="Email address" required value={formData.email} onChange={handleChange} autoComplete="email" />
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg"><div className="bg-inner" /></div>
+          </div>
+
+          {/* Password */}
+          <div className="block-cube block-input block-input-password">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password" placeholder="Password" required value={formData.password} onChange={handleChange} autoComplete="new-password"
+            />
+            <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg"><div className="bg-inner" /></div>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="block-cube block-input block-input-password">
+            <input
+              type={showConfirm ? 'text' : 'password'}
+              name="confirmPassword" placeholder="Confirm password" required value={formData.confirmPassword} onChange={handleChange} autoComplete="new-password"
+            />
+            <button type="button" className="password-toggle" onClick={() => setShowConfirm(!showConfirm)} tabIndex={-1}>
+              {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg"><div className="bg-inner" /></div>
+          </div>
+
+          {/* Password Strength */}
+          {(formData.password || formData.confirmPassword) && (
+            <div className="cube-pw-checks">
+              {passwordChecks.map((check, i) => (
+                <div key={i} className={`cube-pw-check ${check.valid ? 'valid' : ''}`}>
+                  {check.valid ? <Check size={13} /> : <XIcon size={13} />}
+                  {check.label}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
 
-            {/* Password Strength Indicators */}
-            {(formData.password || formData.confirmPassword) && (
-              <div style={styles.passwordChecks}>
-                {passwordChecks.map((check, i) => (
-                  <div key={i} style={{
-                    ...styles.checkItem,
-                    color: check.valid ? 'rgba(134, 239, 172, 0.9)' : 'rgba(255,255,255,0.4)',
-                  }}>
-                    {check.valid ? (
-                      <Check style={{ width: '16px', height: '16px', color: '#86efac' }} />
-                    ) : (
-                      <X style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.3)' }} />
-                    )}
-                    {check.label}
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Submit */}
+          <button type="submit" className="block-cube block-cube-hover" disabled={loading}>
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg"><div className="bg-inner" /></div>
+            <div className="cube-btn-text">
+              {loading ? <><Loader2 size={18} className="animate-spin" /> Creating account...</> : 'Create Account'}
+            </div>
+          </button>
+        </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.button,
-                background: loading ? 'rgba(168, 85, 247, 0.5)' : 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '0 10px 30px rgba(168, 85, 247, 0.4)',
-              }}
-            >
-              {loading ? (
-                <>
-                  <Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} />
-                  Creating account...
-                </>
-              ) : (
-                <>
-                  <UserPlus style={{ width: '20px', height: '20px' }} />
-                  Create Account
-                </>
-              )}
-            </button>
-          </form>
-
-          <p style={styles.switchText}>
+        <div className="cube-footer">
+          <p>
             Already have an account?{' '}
-            <button onClick={onSwitchToLogin} style={styles.switchButton}>
-              Sign in
-            </button>
+            <button onClick={onSwitchToLogin} className="cube-link">Sign in</button>
           </p>
         </div>
       </div>
+
+      <style>{`
+        .cube-login-page {
+          min-height: 100vh;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #1a1a2e;
+          position: relative;
+          overflow: hidden;
+          font-family: 'Geist', 'Inter', monospace, sans-serif;
+        }
+        .cube-particles { position: absolute; inset: 0; pointer-events: none; }
+        .cube-particle {
+          position: absolute; width: 3px; height: 3px;
+          background: rgba(168, 85, 247, 0.4);
+          border-radius: 50%; bottom: -10px;
+          animation: particleFloat linear infinite;
+        }
+        @keyframes particleFloat {
+          0% { transform: translateY(0) scale(1); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 0.6; }
+          100% { transform: translateY(-100vh) scale(0); opacity: 0; }
+        }
+        .cube-login-page::before {
+          content: '';
+          position: absolute;
+          width: 600px; height: 600px;
+          background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, transparent 70%);
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+        }
+        .cube-form-wrapper { width: 340px; position: relative; z-index: 1; }
+        .cube-logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 28px; }
+        .cube-logo-img {
+          height: 120px; width: auto;
+          filter: brightness(1.8) drop-shadow(0 8px 24px rgba(168, 85, 247, 0.35));
+          transition: transform 0.3s ease;
+        }
+        .cube-logo-img:hover { transform: scale(1.05); }
+        .cube-title {
+          color: #fff; font-family: monospace, serif; font-size: 20px;
+          font-weight: 700; letter-spacing: 0.05em; margin: 0 0 20px 0;
+        }
+        .cube-error {
+          display: flex; align-items: center; gap: 8px;
+          padding: 10px 14px; background: rgba(239, 68, 68, 0.12);
+          border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px;
+          color: #f87171; font-size: 13px; margin-bottom: 16px;
+          animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .cube-form { display: flex; flex-direction: column; gap: 16px; }
+
+        .block-cube { position: relative; }
+        .block-cube .bg-top {
+          position: absolute; height: 10px; background: #20203a;
+          bottom: 100%; left: 5px; right: -5px;
+          transform: skew(-45deg, 0); transition: all 0.2s ease-in-out;
+          border: 1px solid rgba(255,255,255,0.08); border-bottom: none;
+        }
+        .block-cube .bg-top .bg-inner { bottom: 0; }
+        .block-cube .bg-right {
+          position: absolute; background: #20203a;
+          top: -5px; z-index: 0; bottom: 5px; width: 10px; left: 100%;
+          transform: skew(0, -45deg); transition: all 0.2s ease-in-out;
+          border: 1px solid rgba(255,255,255,0.08); border-left: none;
+        }
+        .block-cube .bg-right .bg-inner { left: 0; }
+        .block-cube .bg {
+          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+          background: #20203a; transition: all 0.2s ease-in-out;
+          border: 1px solid rgba(255,255,255,0.08); z-index: 1;
+        }
+        .block-cube .bg .bg-inner { top: 0; }
+        .block-cube .bg-inner {
+          background: #1a1a2e; position: absolute;
+          left: 2px; right: 2px; top: 2px; bottom: 2px;
+          transition: top 0.2s ease-in-out, bottom 0.2s ease-in-out, left 0.2s ease-in-out;
+        }
+
+        .block-input input {
+          position: relative; z-index: 2; width: 100%; box-sizing: border-box;
+          padding: 12px 16px; border: none; background: transparent;
+          color: #fff; font-size: 13px; font-family: monospace, serif;
+          letter-spacing: 0.05em; outline: none;
+        }
+        .block-input input::placeholder { color: rgba(255,255,255,0.3); }
+        .block-input-password input { padding-right: 44px; }
+        .password-toggle {
+          position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+          z-index: 3; background: none; border: none;
+          color: rgba(255,255,255,0.3); cursor: pointer; padding: 4px;
+          display: flex; align-items: center; justify-content: center;
+          transition: color 0.2s; border-radius: 4px;
+        }
+        .password-toggle:hover { color: rgba(168, 85, 247, 0.8); }
+
+        .block-input input:focus ~ .bg-top,
+        .block-input input:focus ~ .bg-right,
+        .block-input input:focus ~ .bg { border-color: rgba(168, 85, 247, 0.25); }
+        .block-input input:focus ~ .bg-top .bg-inner,
+        .block-input input:focus ~ .bg-right .bg-inner,
+        .block-input input:focus ~ .bg .bg-inner { top: 100%; }
+        .block-input input:focus ~ .bg-right .bg-inner { top: auto; left: 100%; }
+
+        .block-cube-hover {
+          width: 100%; cursor: pointer; position: relative; margin-top: 4px;
+        }
+        .block-cube-hover .cube-btn-text {
+          position: relative; z-index: 2;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          padding: 12px 16px; color: #fff;
+          font-family: monospace, serif; font-size: 14px; font-weight: 700;
+          letter-spacing: 0.08em; border: none; background: transparent;
+        }
+        .block-cube-hover .bg,
+        .block-cube-hover .bg-top,
+        .block-cube-hover .bg-right {
+          background: linear-gradient(90deg, rgba(168,85,247,1) 0%, rgba(236,72,153,1) 100%);
+          transition: all 0.2s ease-in-out;
+        }
+        .block-cube-hover .bg-inner { background: #1a1a2e; transition: top 0.2s ease-in-out, bottom 0.2s ease-in-out, left 0.2s ease-in-out; }
+        .block-cube-hover:hover .bg .bg-inner,
+        .block-cube-hover:hover .bg-top .bg-inner { top: 100%; }
+        .block-cube-hover:hover .bg-right .bg-inner { left: 100%; }
+        .block-cube-hover:hover .bg,
+        .block-cube-hover:hover .bg-right,
+        .block-cube-hover:hover .bg-top { border-color: rgba(236,72,153, 0.4); }
+        .block-cube-hover:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .cube-pw-checks {
+          display: flex; flex-direction: column; gap: 6px;
+          padding: 10px 12px; border-radius: 6px;
+          border: 1px solid rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.02);
+        }
+        .cube-pw-check {
+          display: flex; align-items: center; gap: 6px;
+          font-family: monospace, serif; font-size: 11px;
+          color: rgba(255,255,255,0.25); transition: color 0.3s;
+        }
+        .cube-pw-check.valid { color: #34d399; }
+
+        .cube-footer { margin-top: 24px; text-align: center; }
+        .cube-footer p { color: rgba(255,255,255,0.4); font-size: 13px; font-family: monospace, serif; letter-spacing: 0.03em; }
+        .cube-link {
+          background: none; border: none; color: rgba(168, 85, 247, 0.8);
+          cursor: pointer; font-family: monospace, serif; font-size: 13px;
+          font-weight: 600; transition: color 0.2s;
+        }
+        .cube-link:hover { color: rgba(168, 85, 247, 1); text-decoration: underline; text-underline-offset: 3px; }
+      `}</style>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%)',
-    position: 'relative',
-    overflow: 'hidden',
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  },
-  bgOrb1: {
-    position: 'absolute',
-    top: '-15%',
-    right: '-10%',
-    width: '500px',
-    height: '500px',
-    background: 'radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%)',
-    borderRadius: '50%',
-    filter: 'blur(60px)',
-    animation: 'float 8s ease-in-out infinite',
-  },
-  bgOrb2: {
-    position: 'absolute',
-    bottom: '-15%',
-    left: '-10%',
-    width: '500px',
-    height: '500px',
-    background: 'radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%)',
-    borderRadius: '50%',
-    filter: 'blur(60px)',
-    animation: 'float 10s ease-in-out infinite reverse',
-  },
-  bgOrb3: {
-    position: 'absolute',
-    top: '40%',
-    left: '30%',
-    width: '300px',
-    height: '300px',
-    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%)',
-    borderRadius: '50%',
-    filter: 'blur(80px)',
-  },
-  wrapper: {
-    width: '100%',
-    maxWidth: '460px',
-    position: 'relative',
-    zIndex: 10,
-  },
-  logoSection: {
-    textAlign: 'center',
-    marginBottom: '28px',
-  },
-  logoBox: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '76px',
-    height: '76px',
-    background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-    borderRadius: '22px',
-    marginBottom: '18px',
-    boxShadow: '0 20px 40px rgba(168, 85, 247, 0.4)',
-    position: 'relative',
-  },
-  logoIcon: {
-    width: '38px',
-    height: '38px',
-    color: 'white',
-  },
-  sparkle: {
-    position: 'absolute',
-    top: '-8px',
-    right: '-8px',
-    width: '22px',
-    height: '22px',
-    color: '#fbbf24',
-    filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))',
-  },
-  title: {
-    fontSize: '2.25rem',
-    fontWeight: '800',
-    background: 'linear-gradient(135deg, #fff 0%, #e9d5ff 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    margin: '0 0 8px 0',
-    letterSpacing: '-0.02em',
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: '0.95rem',
-    margin: 0,
-  },
-  card: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    borderRadius: '24px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    padding: '36px',
-    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
-  },
-  errorBox: {
-    background: 'rgba(239, 68, 68, 0.1)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    color: '#fca5a5',
-    padding: '12px 14px',
-    borderRadius: '12px',
-    fontSize: '0.875rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '20px',
-  },
-  fieldGroup: {
-    marginBottom: '20px',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.85rem',
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: '8px',
-    letterSpacing: '0.01em',
-  },
-  inputWrapper: {
-    position: 'relative',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: '14px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    width: '20px',
-    height: '20px',
-    transition: 'color 0.3s ease',
-    pointerEvents: 'none',
-  },
-  input: {
-    width: '100%',
-    padding: '14px 14px 14px 48px',
-    background: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: '12px',
-    fontSize: '0.95rem',
-    color: '#fff',
-    outline: 'none',
-    transition: 'all 0.3s ease',
-    boxSizing: 'border-box',
-  },
-  passwordChecks: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    marginTop: '-8px',
-    marginBottom: '20px',
-    padding: '12px',
-    background: 'rgba(255,255,255,0.03)',
-    borderRadius: '10px',
-  },
-  checkItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.8rem',
-    transition: 'color 0.3s ease',
-  },
-  button: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    color: 'white',
-    padding: '15px 26px',
-    borderRadius: '12px',
-    fontWeight: '600',
-    fontSize: '1rem',
-    border: 'none',
-    transition: 'all 0.3s ease',
-    marginTop: '6px',
-  },
-  switchText: {
-    marginTop: '24px',
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '0.9rem',
-  },
-  switchButton: {
-    color: '#c084fc',
-    fontWeight: '600',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 0,
-    transition: 'color 0.2s',
-  },
 };
 
 export default Register;

@@ -1,36 +1,30 @@
-// Project: TeamSync - Real-time Task Management
-// File: Task Detail Modal with comments and attachments
-
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  X,
-  MessageSquare,
-  Paperclip,
-  Send,
-  Trash2,
-  Download,
-  FileText,
-  Image,
-  File,
-  Clock,
-  User,
-  Loader2,
+  X, MessageSquare, Paperclip, Send, Trash2, Download, FileText, Image, File,
+  Clock, Loader2, ListChecks, Plus, CheckCircle2, Circle, Play, Square
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { tasksAPI } from '../../utils/api';
-import { useThemeStore, getThemeColors } from '../../store/themeStore';
+import { useTaskStore } from '../../store/taskStore';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 const TaskDetailModal = ({ isOpen, onClose, task, onTaskUpdate }) => {
-  const [activeTab, setActiveTab] = useState('comments');
+  const [activeTab, setActiveTab] = useState('subtasks');
   const [comments, setComments] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [creatingSubtask, setCreatingSubtask] = useState(false);
   const fileInputRef = useRef(null);
-  const { theme } = useThemeStore();
-  const colors = getThemeColors(theme);
+  const { tasks, createTask, updateTask, startTimer, stopTimer } = useTaskStore();
+
+  // Get subtasks for this task
+  const subtasks = tasks.filter(t => t.parentTaskId === task?._id);
+  const completedSubtasks = subtasks.filter(t => t.status === 'done').length;
 
   useEffect(() => {
     if (task) {
@@ -41,7 +35,6 @@ const TaskDetailModal = ({ isOpen, onClose, task, onTaskUpdate }) => {
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !task) return;
-
     setLoading(true);
     try {
       const response = await tasksAPI.addComment(task._id, { text: newComment });
@@ -58,7 +51,6 @@ const TaskDetailModal = ({ isOpen, onClose, task, onTaskUpdate }) => {
 
   const handleDeleteComment = async (commentId) => {
     if (!task) return;
-
     try {
       const response = await tasksAPI.deleteComment(task._id, commentId);
       const updatedTask = response.data.data.task;
@@ -72,7 +64,6 @@ const TaskDetailModal = ({ isOpen, onClose, task, onTaskUpdate }) => {
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !task) return;
-
     setUploading(true);
     try {
       const formData = new FormData();
@@ -83,18 +74,14 @@ const TaskDetailModal = ({ isOpen, onClose, task, onTaskUpdate }) => {
       if (onTaskUpdate) onTaskUpdate(updatedTask);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert(error.response?.data?.message || 'Failed to upload file');
     } finally {
       setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
     if (!task) return;
-
     try {
       const response = await tasksAPI.deleteAttachment(task._id, attachmentId);
       const updatedTask = response.data.data.task;
@@ -105,14 +92,35 @@ const TaskDetailModal = ({ isOpen, onClose, task, onTaskUpdate }) => {
     }
   };
 
+  const handleAddSubtask = async () => {
+    if (!newSubtaskTitle.trim() || !task) return;
+    setCreatingSubtask(true);
+    try {
+      await createTask({
+        title: newSubtaskTitle.trim(),
+        parentTaskId: task._id,
+        status: 'todo',
+        priority: task.priority || 'medium',
+        description: '',
+        tags: [],
+      });
+      setNewSubtaskTitle('');
+    } catch (error) {
+      console.error('Error creating subtask:', error);
+    } finally {
+      setCreatingSubtask(false);
+    }
+  };
+
+  const handleToggleSubtask = async (subtask) => {
+    const newStatus = subtask.status === 'done' ? 'todo' : 'done';
+    await updateTask(subtask._id, { status: newStatus });
+  };
+
   const getFileIcon = (mimetype) => {
-    if (mimetype.startsWith('image/')) {
-      return <Image size={20} color="#10b981" />;
-    }
-    if (mimetype === 'application/pdf') {
-      return <FileText size={20} color="#ef4444" />;
-    }
-    return <File size={20} color="#6366f1" />;
+    if (mimetype?.startsWith('image/')) return <Image className="h-5 w-5 text-emerald-500" />;
+    if (mimetype === 'application/pdf') return <FileText className="h-5 w-5 text-rose-500" />;
+    return <File className="h-5 w-5 text-indigo-500" />;
   };
 
   const formatFileSize = (bytes) => {
@@ -123,410 +131,244 @@ const TaskDetailModal = ({ isOpen, onClose, task, onTaskUpdate }) => {
 
   if (!isOpen || !task) return null;
 
-  const styles = {
-    overlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: colors.modalOverlay,
-      backdropFilter: 'blur(4px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px',
-    },
-    modal: {
-      background: colors.cardBg,
-      borderRadius: '20px',
-      width: '90%',
-      minWidth: '500px',
-      maxWidth: '650px',
-      maxHeight: '85vh',
-      display: 'flex',
-      flexDirection: 'column',
-      boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
-      overflow: 'hidden',
-    },
-    header: {
-      padding: '24px',
-      borderBottom: `1px solid ${colors.border}`,
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      gap: '16px',
-      flexShrink: 0,
-    },
-    title: {
-      fontSize: '20px',
-      fontWeight: '700',
-      color: colors.textPrimary,
-      margin: 0,
-    },
-    closeButton: {
-      padding: '8px',
-      background: colors.bgTertiary,
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      color: colors.textSecondary,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    tabs: {
-      display: 'flex',
-      padding: '0 24px',
-      borderBottom: `1px solid ${colors.border}`,
-      gap: '8px',
-      flexShrink: 0,
-    },
-    tab: (isActive) => ({
-      padding: '14px 20px',
-      background: 'none',
-      border: 'none',
-      borderBottom: isActive ? '3px solid #6366f1' : '3px solid transparent',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: '600',
-      color: isActive ? '#6366f1' : colors.textSecondary,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      transition: 'all 0.2s',
-      whiteSpace: 'nowrap',
-      flexShrink: 0,
-    }),
-    tabBadge: {
-      background: 'rgba(99, 102, 241, 0.15)',
-      color: '#6366f1',
-      padding: '2px 8px',
-      borderRadius: '10px',
-      fontSize: '12px',
-    },
-    content: {
-      flex: 1,
-      overflowY: 'auto',
-      padding: '24px',
-    },
-    commentInput: {
-      display: 'flex',
-      gap: '12px',
-      marginBottom: '20px',
-    },
-    input: {
-      flex: 1,
-      padding: '12px 16px',
-      border: `2px solid ${colors.border}`,
-      borderRadius: '12px',
-      background: colors.bgSecondary,
-      color: colors.textPrimary,
-      fontSize: '14px',
-      outline: 'none',
-      transition: 'border-color 0.2s',
-    },
-    sendButton: {
-      padding: '12px 16px',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-      border: 'none',
-      borderRadius: '12px',
-      color: '#fff',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    commentItem: {
-      display: 'flex',
-      gap: '12px',
-      marginBottom: '16px',
-      padding: '16px',
-      background: colors.bgTertiary,
-      borderRadius: '12px',
-    },
-    avatar: {
-      width: '36px',
-      height: '36px',
-      borderRadius: '10px',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#fff',
-      fontSize: '14px',
-      fontWeight: '600',
-      flexShrink: 0,
-    },
-    commentContent: {
-      flex: 1,
-      minWidth: 0,
-    },
-    commentHeader: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: '4px',
-    },
-    commentAuthor: {
-      fontSize: '14px',
-      fontWeight: '600',
-      color: colors.textPrimary,
-    },
-    commentTime: {
-      fontSize: '12px',
-      color: colors.textMuted,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-    },
-    commentText: {
-      fontSize: '14px',
-      color: colors.textSecondary,
-      lineHeight: '1.5',
-      margin: 0,
-    },
-    deleteButton: {
-      padding: '6px',
-      background: 'none',
-      border: 'none',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      color: colors.textMuted,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    uploadButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px',
-      padding: '16px',
-      border: `2px dashed ${colors.border}`,
-      borderRadius: '12px',
-      background: 'transparent',
-      color: colors.textSecondary,
-      cursor: 'pointer',
-      marginBottom: '20px',
-      transition: 'all 0.2s',
-      width: '100%',
-    },
-    attachmentItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      padding: '14px 16px',
-      background: colors.bgTertiary,
-      borderRadius: '12px',
-      marginBottom: '10px',
-    },
-    attachmentIcon: {
-      width: '40px',
-      height: '40px',
-      borderRadius: '10px',
-      background: colors.bgSecondary,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    attachmentInfo: {
-      flex: 1,
-      minWidth: 0,
-    },
-    attachmentName: {
-      fontSize: '14px',
-      fontWeight: '500',
-      color: colors.textPrimary,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    },
-    attachmentMeta: {
-      fontSize: '12px',
-      color: colors.textMuted,
-    },
-    attachmentActions: {
-      display: 'flex',
-      gap: '8px',
-    },
-    iconButton: {
-      padding: '8px',
-      background: colors.bgSecondary,
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      color: colors.textSecondary,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    empty: {
-      textAlign: 'center',
-      padding: '32px',
-      color: colors.textMuted,
-    },
-  };
+  const tabs = [
+    { id: 'subtasks', label: 'Subtasks', icon: ListChecks, count: subtasks.length },
+    { id: 'comments', label: 'Comments', icon: MessageSquare, count: comments.length },
+    { id: 'attachments', label: 'Files', icon: Paperclip, count: attachments.length },
+  ];
+
+  const subtaskProgress = subtasks.length > 0 ? Math.round((completedSubtasks / subtasks.length) * 100) : 0;
 
   return createPortal(
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div style={styles.header}>
-          <div>
-            <h2 style={styles.title}>{task.title}</h2>
+    <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="bg-card rounded-2xl w-[90%] min-w-[400px] max-w-[650px] max-h-[85vh] flex flex-col shadow-2xl border border-border/50 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        
+        {/* Header */}
+        <div className="p-6 border-b border-border/50 flex items-start justify-between gap-4 shrink-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-bold text-foreground truncate">{task.title}</h2>
             {task.description && (
-              <p style={{ margin: '8px 0 0', color: colors.textSecondary, fontSize: '14px' }}>
-                {task.description}
-              </p>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
             )}
           </div>
-          <button onClick={onClose} style={styles.closeButton}>
-            <X size={20} />
-          </button>
+          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0 rounded-lg">
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
-        <div style={styles.tabs}>
-          <button
-            onClick={() => setActiveTab('comments')}
-            style={styles.tab(activeTab === 'comments')}
-          >
-            <MessageSquare size={18} />
-            Comments
-            <span style={styles.tabBadge}>{comments.length}</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('attachments')}
-            style={styles.tab(activeTab === 'attachments')}
-          >
-            <Paperclip size={18} />
-            Files
-            <span style={styles.tabBadge}>{attachments.length}</span>
-          </button>
+        {/* Tabs */}
+        <div className="flex px-6 border-b border-border/50 gap-1 shrink-0 overflow-x-auto">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3.5 text-sm font-semibold whitespace-nowrap border-b-[3px] transition-all ${
+                activeTab === tab.id
+                  ? 'border-indigo-500 text-indigo-500'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+              <span className="bg-indigo-500/10 text-indigo-500 px-2 py-0.5 rounded-full text-[11px] font-bold">{tab.count}</span>
+            </button>
+          ))}
         </div>
 
-        <div style={styles.content}>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          
+          {/* === SUBTASKS TAB === */}
+          {activeTab === 'subtasks' && (
+            <div className="space-y-4">
+              {/* Progress */}
+              {subtasks.length > 0 && (
+                <div className="space-y-2 mb-5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground font-medium">Progress</span>
+                    <span className={`font-bold ${subtaskProgress === 100 ? 'text-emerald-500' : 'text-foreground'}`}>
+                      {completedSubtasks}/{subtasks.length} completed
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${subtaskProgress === 100 ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`}
+                      style={{ width: `${subtaskProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Add Subtask Input */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a subtask..."
+                  value={newSubtaskTitle}
+                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
+                  className="bg-background/50 border-border/50"
+                />
+                <Button
+                  onClick={handleAddSubtask}
+                  disabled={creatingSubtask || !newSubtaskTitle.trim()}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white shrink-0 px-4"
+                >
+                  {creatingSubtask ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                </Button>
+              </div>
+
+              {/* Subtask Checklist */}
+              {subtasks.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <ListChecks className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">No subtasks yet</p>
+                  <p className="text-sm mt-1">Break this task into smaller pieces</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {subtasks.map(subtask => (
+                    <div
+                      key={subtask._id}
+                      className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group ${
+                        subtask.status === 'done'
+                          ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
+                          : 'bg-muted/30 border-border/50 hover:bg-muted/50'
+                      }`}
+                      onClick={() => handleToggleSubtask(subtask)}
+                    >
+                      {subtask.status === 'done' ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground group-hover:text-indigo-500 shrink-0 transition-colors" />
+                      )}
+                      <span className={`text-sm font-medium flex-1 ${subtask.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                        {subtask.title}
+                      </span>
+                      {subtask.activeTimerStart && (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-500 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          tracking
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* === COMMENTS TAB === */}
           {activeTab === 'comments' && (
             <>
-              <div style={styles.commentInput}>
-                <input
-                  type="text"
+              <div className="flex gap-3 mb-5">
+                <Input
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Write a comment..."
-                  style={styles.input}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                  className="bg-background/50 border-border/50"
                 />
-                <button
+                <Button
                   onClick={handleAddComment}
-                  style={styles.sendButton}
                   disabled={loading || !newComment.trim()}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white shrink-0 px-4"
                 >
-                  {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                </button>
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
               </div>
 
               {comments.length === 0 ? (
-                <div style={styles.empty}>
-                  <MessageSquare size={40} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                  <p>No comments yet. Be the first to comment!</p>
+                <div className="text-center py-10 text-muted-foreground">
+                  <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">No comments yet</p>
+                  <p className="text-sm mt-1">Be the first to comment!</p>
                 </div>
               ) : (
-                comments.map((comment) => (
-                  <div key={comment._id} style={styles.commentItem}>
-                    <div style={styles.avatar}>
-                      {comment.user?.name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div style={styles.commentContent}>
-                      <div style={styles.commentHeader}>
-                        <span style={styles.commentAuthor}>
-                          {comment.user?.name || 'Unknown User'}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={styles.commentTime}>
-                            <Clock size={12} />
-                            {format(new Date(comment.createdAt), 'MMM d, h:mm a')}
-                          </span>
-                          <button
-                            onClick={() => handleDeleteComment(comment._id)}
-                            style={styles.deleteButton}
-                            title="Delete comment"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                <div className="space-y-3">
+                  {comments.map((comment) => (
+                    <div key={comment._id} className="flex gap-3 p-4 bg-muted/30 rounded-xl border border-border/50">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                        {comment.user?.name?.charAt(0).toUpperCase() || 'U'}
                       </div>
-                      <p style={styles.commentText}>{comment.text}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-semibold text-foreground">{comment.user?.name || 'Unknown'}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(comment.createdAt), 'MMM d, h:mm a')}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteComment(comment._id)}
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{comment.text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </>
           )}
 
+          {/* === ATTACHMENTS TAB === */}
           {activeTab === 'attachments' && (
             <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
+              <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                style={styles.uploadButton}
                 disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-border/50 rounded-xl text-muted-foreground hover:text-foreground hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all mb-5"
               >
                 {uploading ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    Uploading...
-                  </>
+                  <><Loader2 className="h-5 w-5 animate-spin" /> Uploading...</>
                 ) : (
-                  <>
-                    <Paperclip size={20} />
-                    Click to upload a file (max 10MB)
-                  </>
+                  <><Paperclip className="h-5 w-5" /> Click to upload a file (max 10MB)</>
                 )}
               </button>
 
               {attachments.length === 0 ? (
-                <div style={styles.empty}>
-                  <Paperclip size={40} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                  <p>No attachments yet. Upload files to share with your team.</p>
+                <div className="text-center py-10 text-muted-foreground">
+                  <Paperclip className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">No attachments yet</p>
+                  <p className="text-sm mt-1">Upload files to share with your team</p>
                 </div>
               ) : (
-                attachments.map((attachment) => (
-                  <div key={attachment._id} style={styles.attachmentItem}>
-                    <div style={styles.attachmentIcon}>
-                      {getFileIcon(attachment.mimetype)}
-                    </div>
-                    <div style={styles.attachmentInfo}>
-                      <div style={styles.attachmentName}>{attachment.originalName}</div>
-                      <div style={styles.attachmentMeta}>
-                        {formatFileSize(attachment.size)} • Uploaded by {attachment.uploadedBy?.name || 'Unknown'}
+                <div className="space-y-2.5">
+                  {attachments.map((attachment) => (
+                    <div key={attachment._id} className="flex items-center gap-3 p-3.5 bg-muted/30 rounded-xl border border-border/50">
+                      <div className="w-10 h-10 rounded-lg bg-card flex items-center justify-center border border-border/50 shrink-0">
+                        {getFileIcon(attachment.mimetype)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-foreground truncate">{attachment.originalName}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {formatFileSize(attachment.size)} • {attachment.uploadedBy?.name || 'Unknown'}
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <a
+                          href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${attachment.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-lg bg-card border border-border/50 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Download className="h-4 w-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDeleteAttachment(attachment._id)}
+                          className="p-2 rounded-lg bg-card border border-border/50 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
-                    <div style={styles.attachmentActions}>
-                      <a
-                        href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${attachment.url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={styles.iconButton}
-                        title="Download"
-                      >
-                        <Download size={16} />
-                      </a>
-                      <button
-                        onClick={() => handleDeleteAttachment(attachment._id)}
-                        style={styles.iconButton}
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </>
           )}

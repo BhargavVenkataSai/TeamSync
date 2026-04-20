@@ -1,12 +1,10 @@
-// Project: TeamSync - Real-time Task Management
-// File: TaskList component with modern inline styles
-
 import { useEffect, useState } from 'react';
 import { Plus, ClipboardList, Loader2 } from 'lucide-react';
 import { useTaskStore } from '../../store/taskStore';
 import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 import TaskFilters from './TaskFilters';
+import { Button } from '../ui/button';
 
 const TaskList = () => {
   const {
@@ -64,17 +62,17 @@ const TaskList = () => {
   };
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div style={styles.header}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 style={styles.title}>Tasks</h1>
-          <p style={styles.subtitle}>Manage and track your team's tasks</p>
+          <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
+          <p className="text-muted-foreground mt-1">Manage and track your team's tasks</p>
         </div>
-        <button onClick={handleOpenCreate} style={styles.addButton}>
-          <Plus style={{ width: '20px', height: '20px' }} />
+        <Button onClick={handleOpenCreate} className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-md shadow-indigo-500/20 w-full sm:w-auto">
+          <Plus className="mr-2 h-5 w-5" />
           Add Task
-        </button>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -82,12 +80,14 @@ const TaskList = () => {
 
       {/* Error State */}
       {error && (
-        <div style={styles.errorBox}>{error}</div>
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl flex items-center">
+          {error}
+        </div>
       )}
 
       {/* Loading State */}
       {loading && tasks.length === 0 && (
-        <div style={styles.grid}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <TaskSkeleton key={i} />
           ))}
@@ -96,24 +96,24 @@ const TaskList = () => {
 
       {/* Empty State */}
       {!loading && tasks.length === 0 && (
-        <div style={styles.emptyState}>
-          <div style={styles.emptyIcon}>
-            <ClipboardList style={{ width: '32px', height: '32px', color: '#6366f1' }} />
+        <div className="bg-card border border-border/50 rounded-2xl shadow-sm p-12 text-center flex flex-col items-center">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+            <ClipboardList className="h-8 w-8 text-primary" />
           </div>
-          <h3 style={styles.emptyTitle}>No tasks yet</h3>
-          <p style={styles.emptyText}>
+          <h3 className="text-xl font-semibold mb-2 text-foreground">No tasks yet</h3>
+          <p className="text-muted-foreground max-w-md mb-6">
             Get started by creating your first task. Click the button below to add a new task.
           </p>
-          <button onClick={handleOpenCreate} style={styles.createButton}>
-            <Plus style={{ width: '20px', height: '20px' }} />
+          <Button onClick={handleOpenCreate} className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700">
+            <Plus className="mr-2 h-5 w-5" />
             Create First Task
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Task Grid */}
       {tasks.length > 0 && (
-        <div style={styles.grid}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tasks.map((task) => (
             <TaskCard
               key={task._id}
@@ -127,8 +127,8 @@ const TaskList = () => {
 
       {/* Loading overlay when refetching */}
       {loading && tasks.length > 0 && (
-        <div style={styles.loadingOverlay}>
-          <Loader2 style={{ width: '24px', height: '24px', color: '#6366f1', animation: 'spin 1s linear infinite' }} />
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
         </div>
       )}
 
@@ -140,150 +140,26 @@ const TaskList = () => {
         onSubmit={handleSubmit}
         isLoading={isSubmitting}
       />
-      
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
     </div>
   );
 };
 
 // Loading skeleton component
 const TaskSkeleton = () => (
-  <div style={styles.skeleton}>
-    <div style={{ ...styles.skeletonBar, height: '4px', marginBottom: '16px' }} />
-    <div style={{ ...styles.skeletonBar, width: '75%', marginBottom: '12px' }} />
-    <div style={{ ...styles.skeletonBar, marginBottom: '8px' }} />
-    <div style={{ ...styles.skeletonBar, width: '60%', marginBottom: '16px' }} />
-    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-      <div style={{ ...styles.skeletonBar, width: '60px', height: '24px', borderRadius: '12px' }} />
-      <div style={{ ...styles.skeletonBar, width: '60px', height: '24px', borderRadius: '12px' }} />
+  <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm animate-pulse">
+    <div className="h-1 bg-muted rounded-full w-full mb-4" />
+    <div className="h-4 bg-muted rounded w-3/4 mb-3" />
+    <div className="h-3 bg-muted rounded w-full mb-2" />
+    <div className="h-3 bg-muted rounded w-2/3 mb-4" />
+    <div className="flex gap-2 mb-4">
+      <div className="h-6 w-16 bg-muted rounded-full" />
+      <div className="h-6 w-16 bg-muted rounded-full" />
     </div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-      <div style={{ ...styles.skeletonBar, width: '80px' }} />
-      <div style={{ ...styles.skeletonBar, width: '24px', height: '24px', borderRadius: '50%' }} />
+    <div className="flex justify-between items-center pt-3 border-t border-border/50">
+      <div className="h-4 w-20 bg-muted rounded" />
+      <div className="h-7 w-7 bg-muted rounded-full" />
     </div>
   </div>
 );
-
-const styles = {
-  header: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '16px',
-    marginBottom: '24px',
-  },
-  title: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#111827',
-    margin: 0,
-  },
-  subtitle: {
-    color: '#6b7280',
-    marginTop: '4px',
-    margin: 0,
-  },
-  addButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-    color: 'white',
-    borderRadius: '12px',
-    fontWeight: '600',
-    fontSize: '0.9rem',
-    border: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
-    transition: 'all 0.2s',
-  },
-  errorBox: {
-    backgroundColor: '#fef2f2',
-    color: '#dc2626',
-    padding: '12px 16px',
-    borderRadius: '12px',
-    marginBottom: '24px',
-    border: '1px solid #fecaca',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '20px',
-  },
-  emptyState: {
-    backgroundColor: 'white',
-    borderRadius: '20px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    border: '1px solid #e5e7eb',
-    padding: '64px 24px',
-    textAlign: 'center',
-  },
-  emptyIcon: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '64px',
-    height: '64px',
-    backgroundColor: '#eef2ff',
-    borderRadius: '16px',
-    marginBottom: '16px',
-  },
-  emptyTitle: {
-    fontSize: '1.125rem',
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: '8px',
-  },
-  emptyText: {
-    color: '#6b7280',
-    marginBottom: '24px',
-    maxWidth: '360px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-  },
-  createButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 24px',
-    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-    color: 'white',
-    borderRadius: '12px',
-    fontWeight: '600',
-    fontSize: '0.9rem',
-    border: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
-  },
-  loadingOverlay: {
-    display: 'flex',
-    justifyContent: 'center',
-    padding: '32px',
-  },
-  skeleton: {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    border: '1px solid #e5e7eb',
-    padding: '20px',
-    animation: 'pulse 2s ease-in-out infinite',
-  },
-  skeletonBar: {
-    height: '16px',
-    backgroundColor: '#e5e7eb',
-    borderRadius: '8px',
-  },
-};
 
 export default TaskList;

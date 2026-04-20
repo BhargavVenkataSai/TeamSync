@@ -1,294 +1,100 @@
-// Project: TeamSync - Real-time Task Management
-// File: KanbanTaskCard component with inline styles
-
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Calendar, Tag, User, GripVertical, AlertCircle, Clock, MessageSquare, Paperclip } from 'lucide-react';
+import { Tag, GripVertical, AlertCircle, Clock, MessageSquare, Paperclip } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 const KanbanTaskCard = ({ task, isDragging, onClick }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: task._id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } = useSortable({ id: task._id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
 
   const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'done';
   const isDueToday = task.dueDate && isToday(new Date(task.dueDate));
 
-  // Priority styles
-  const getPriorityStyles = () => {
+  const getPriorityClasses = () => {
     switch (task.priority) {
-      case 'high':
-        return {
-          background: 'rgba(239, 68, 68, 0.15)',
-          color: '#dc2626',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          dot: '#ef4444',
-        };
-      case 'medium':
-        return {
-          background: 'rgba(245, 158, 11, 0.15)',
-          color: '#d97706',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
-          dot: '#f59e0b',
-        };
-      default:
-        return {
-          background: 'rgba(59, 130, 246, 0.15)',
-          color: '#2563eb',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          dot: '#3b82f6',
-        };
+      case 'high': return { bar: 'bg-gradient-to-r from-rose-500 to-rose-400', badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' };
+      case 'medium': return { bar: 'bg-gradient-to-r from-amber-500 to-amber-400', badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' };
+      default: return { bar: 'bg-gradient-to-r from-blue-500 to-blue-400', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' };
     }
   };
 
-  const priorityStyles = getPriorityStyles();
-
-  const styles = {
-    card: {
-      background: '#ffffff',
-      borderRadius: '14px',
-      boxShadow: isDragging || isSortableDragging
-        ? '0 20px 40px rgba(0, 0, 0, 0.2)'
-        : '0 2px 8px rgba(0, 0, 0, 0.06)',
-      border: '1px solid rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden',
-      cursor: isDragging ? 'grabbing' : 'grab',
-      opacity: isSortableDragging ? 0.5 : 1,
-      transform: isDragging ? 'rotate(3deg)' : 'none',
-      transition: 'box-shadow 0.2s, transform 0.2s',
-    },
-    priorityBar: {
-      height: '3px',
-      background: `linear-gradient(90deg, ${priorityStyles.dot}, ${priorityStyles.dot}80)`,
-    },
-    content: {
-      padding: '16px',
-    },
-    header: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: '10px',
-      marginBottom: '10px',
-    },
-    dragHandle: {
-      padding: '4px',
-      color: '#d1d5db',
-      cursor: 'grab',
-      flexShrink: 0,
-      marginTop: '2px',
-    },
-    title: {
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#1a1a2e',
-      margin: 0,
-      lineHeight: '1.4',
-      flex: 1,
-      display: '-webkit-box',
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: 'vertical',
-      overflow: 'hidden',
-    },
-    description: {
-      fontSize: '13px',
-      color: '#6b7280',
-      marginBottom: '12px',
-      marginLeft: '28px',
-      lineHeight: '1.4',
-      display: '-webkit-box',
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: 'vertical',
-      overflow: 'hidden',
-    },
-    tagsContainer: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '6px',
-      marginBottom: '12px',
-      marginLeft: '28px',
-    },
-    tag: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '4px',
-      padding: '3px 8px',
-      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08))',
-      color: '#6366f1',
-      fontSize: '11px',
-      fontWeight: '500',
-      borderRadius: '12px',
-    },
-    footer: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingTop: '12px',
-      marginLeft: '28px',
-      borderTop: '1px solid rgba(0, 0, 0, 0.04)',
-    },
-    footerLeft: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-    },
-    priorityBadge: {
-      padding: '4px 10px',
-      fontSize: '11px',
-      fontWeight: '600',
-      borderRadius: '12px',
-      ...priorityStyles,
-    },
-    dueDate: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-      fontSize: '11px',
-      fontWeight: '500',
-      color: isOverdue ? '#dc2626' : isDueToday ? '#d97706' : '#9ca3af',
-    },
-    assignee: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-    },
-    avatar: {
-      width: '24px',
-      height: '24px',
-      borderRadius: '50%',
-      objectFit: 'cover',
-      border: '2px solid #e5e7eb',
-    },
-    avatarPlaceholder: {
-      width: '24px',
-      height: '24px',
-      borderRadius: '50%',
-      background: 'linear-gradient(135deg, #e5e7eb, #d1d5db)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    assigneeName: {
-      fontSize: '11px',
-      color: '#6b7280',
-      fontWeight: '500',
-      maxWidth: '80px',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-    },
-    indicators: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-    },
-    indicator: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '3px',
-      fontSize: '10px',
-      color: '#9ca3af',
-      fontWeight: '500',
-    },
-  };
+  const priorityClasses = getPriorityClasses();
 
   return (
     <div
       ref={setNodeRef}
-      style={{ ...styles.card, ...style }}
+      style={style}
       onClick={() => onClick?.(task)}
+      className={`relative overflow-hidden rounded-xl bg-card border border-border/50 transition-all duration-200 cursor-grab hover:shadow-md ${
+        isDragging || isSortableDragging ? 'shadow-xl opacity-50 z-50 scale-105 cursor-grabbing' : 'shadow-sm'
+      }`}
       {...attributes}
     >
-      {/* Priority bar */}
-      <div style={styles.priorityBar} />
-
-      <div style={styles.content}>
-        {/* Header with drag handle and title */}
-        <div style={styles.header}>
-          <div style={styles.dragHandle} {...listeners}>
-            <GripVertical size={16} />
+      <div className={`absolute top-0 left-0 w-full h-1 ${priorityClasses.bar}`} />
+      
+      <div className="p-4 pt-4">
+        <div className="flex items-start gap-2 mb-2">
+          <div className="mt-0.5 text-muted-foreground/50 hover:text-foreground cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-md" {...listeners}>
+            <GripVertical className="w-4 h-4" />
           </div>
-          <h4 style={styles.title}>{task.title}</h4>
+          <h4 className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{task.title}</h4>
         </div>
 
-        {/* Description */}
-        {task.description && (
-          <p style={styles.description}>{task.description}</p>
-        )}
+        {task.description && <p className="text-xs text-muted-foreground line-clamp-2 mb-3 ml-7">{task.description}</p>}
 
-        {/* Tags */}
-        {task.tags && task.tags.length > 0 && (
-          <div style={styles.tagsContainer}>
-            {task.tags.slice(0, 2).map((tag, index) => (
-              <span key={index} style={styles.tag}>
-                <Tag size={9} />
-                {tag}
+        {task.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3 ml-7">
+            {task.tags.slice(0, 2).map((tag, i) => (
+              <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-500/10 text-indigo-500">
+                <Tag className="w-2.5 h-2.5" /> {tag}
               </span>
             ))}
             {task.tags.length > 2 && (
-              <span style={{ ...styles.tag, background: 'rgba(107, 114, 128, 0.1)', color: '#6b7280' }}>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
                 +{task.tags.length - 2}
               </span>
             )}
           </div>
         )}
 
-        {/* Footer */}
-        <div style={styles.footer}>
-          <div style={styles.footerLeft}>
-            <span style={styles.priorityBadge}>
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50 ml-7">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${priorityClasses.badge}`}>
               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
             </span>
+            
             {task.dueDate && (
-              <div style={styles.dueDate}>
-                {isOverdue && <AlertCircle size={12} />}
-                <Clock size={12} />
+              <div className={`flex items-center gap-1 text-[10px] font-medium ${isOverdue ? 'text-destructive' : isDueToday ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                {isOverdue && <AlertCircle className="w-3 h-3" />}
+                <Clock className="w-3 h-3" />
                 {format(new Date(task.dueDate), 'MMM d')}
               </div>
             )}
-            {/* Comments and Attachments indicators */}
+            
             {(task.comments?.length > 0 || task.attachments?.length > 0) && (
-              <div style={styles.indicators}>
+              <div className="flex items-center gap-2 text-muted-foreground">
                 {task.comments?.length > 0 && (
-                  <span style={styles.indicator} title={`${task.comments.length} comments`}>
-                    <MessageSquare size={10} />
-                    {task.comments.length}
+                  <span className="flex items-center gap-1 text-[10px] font-medium" title={`${task.comments.length} comments`}>
+                    <MessageSquare className="w-2.5 h-2.5" /> {task.comments.length}
                   </span>
                 )}
                 {task.attachments?.length > 0 && (
-                  <span style={styles.indicator} title={`${task.attachments.length} files`}>
-                    <Paperclip size={10} />
-                    {task.attachments.length}
+                  <span className="flex items-center gap-1 text-[10px] font-medium" title={`${task.attachments.length} files`}>
+                    <Paperclip className="w-2.5 h-2.5" /> {task.attachments.length}
                   </span>
                 )}
               </div>
             )}
           </div>
 
-          {/* Assignee */}
           {task.assignedTo && (
-            <div style={styles.assignee}>
-              {task.assignedTo.avatar ? (
-                <img
-                  src={task.assignedTo.avatar}
-                  alt={task.assignedTo.name}
-                  style={styles.avatar}
-                />
-              ) : (
-                <div style={styles.avatarPlaceholder}>
-                  <User size={12} color="#9ca3af" />
-                </div>
-              )}
-            </div>
+            <Avatar className="w-6 h-6 border border-border shrink-0">
+              <AvatarImage src={task.assignedTo.avatar} />
+              <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-[8px] text-white">
+                {task.assignedTo.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
           )}
         </div>
       </div>

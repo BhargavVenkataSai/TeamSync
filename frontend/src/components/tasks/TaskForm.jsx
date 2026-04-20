@@ -1,81 +1,55 @@
-// Project: TeamSync - Real-time Task Management
-// File: TaskForm modal component with inline styles
-
 import { useState, useEffect } from 'react';
 import { X, Save, Tag, Calendar, User, AlertTriangle, Loader2 } from 'lucide-react';
 import { authAPI } from '../../utils/api';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 const TaskForm = ({ isOpen, onClose, onSubmit, task, isLoading }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    status: 'todo',
-    priority: 'medium',
-    dueDate: '',
-    assignedTo: '',
-    tags: '',
+    title: '', description: '', status: 'todo', priority: 'medium',
+    dueDate: '', assignedTo: '', tags: '',
   });
-
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const loadUsers = async () => {
-      if (!isOpen) {
-        return;
-      }
-
+      if (!isOpen) return;
       setUsersLoading(true);
       try {
         const response = await authAPI.getUsers();
         setUsers(response.data?.data?.users || []);
       } catch (error) {
-        console.error('Failed to load users for assignment:', error);
+        console.error('Failed to load users:', error);
         setUsers([]);
       } finally {
         setUsersLoading(false);
       }
     };
-
     loadUsers();
   }, [isOpen]);
 
   useEffect(() => {
     if (task) {
       setFormData({
-        title: task.title || '',
-        description: task.description || '',
-        status: task.status || 'todo',
-        priority: task.priority || 'medium',
+        title: task.title || '', description: task.description || '',
+        status: task.status || 'todo', priority: task.priority || 'medium',
         dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
         assignedTo: task.assignedTo?._id || '',
         tags: task.tags ? task.tags.join(', ') : '',
       });
     } else {
-      setFormData({
-        title: '',
-        description: '',
-        status: 'todo',
-        priority: 'medium',
-        dueDate: '',
-        assignedTo: '',
-        tags: '',
-      });
+      setFormData({ title: '', description: '', status: 'todo', priority: 'medium', dueDate: '', assignedTo: '', tags: '' });
     }
     setErrors({});
   }, [task, isOpen]);
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    } else if (formData.title.length < 3) {
-      newErrors.title = 'Title must be at least 3 characters';
-    }
-    if (formData.description && formData.description.length > 500) {
-      newErrors.description = 'Description must be less than 500 characters';
-    }
+    if (!formData.title.trim()) newErrors.title = 'Title is required';
+    else if (formData.title.length < 3) newErrors.title = 'Title must be at least 3 characters';
+    if (formData.description && formData.description.length > 500) newErrors.description = 'Description must be less than 500 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -83,369 +57,83 @@ const TaskForm = ({ isOpen, onClose, onSubmit, task, isLoading }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-
-    const submitData = {
+    onSubmit({
       ...formData,
       assignedTo: formData.assignedTo || null,
-      tags: formData.tags
-        ? formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
-        : [],
-    };
-
-    onSubmit(submitData);
+      tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+    });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   if (!isOpen) return null;
 
-  const styles = {
-    overlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(15, 15, 35, 0.8)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 50,
-      padding: '20px',
-    },
-    modal: {
-      background: '#ffffff',
-      borderRadius: '24px',
-      maxWidth: '560px',
-      width: '100%',
-      maxHeight: '90vh',
-      overflow: 'hidden',
-      boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
-      animation: 'slideUp 0.3s ease',
-    },
-    header: {
-      padding: '24px 28px',
-      borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))',
-    },
-    headerTitle: {
-      fontSize: '20px',
-      fontWeight: '700',
-      color: '#1a1a2e',
-      margin: 0,
-    },
-    closeButton: {
-      width: '40px',
-      height: '40px',
-      borderRadius: '12px',
-      border: 'none',
-      background: 'rgba(0, 0, 0, 0.05)',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#6b7280',
-      transition: 'all 0.2s',
-    },
-    form: {
-      padding: '28px',
-      overflowY: 'auto',
-      maxHeight: 'calc(90vh - 160px)',
-    },
-    formGroup: {
-      marginBottom: '24px',
-    },
-    label: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#374151',
-      marginBottom: '8px',
-    },
-    labelIcon: {
-      color: '#6366f1',
-    },
-    required: {
-      color: '#ef4444',
-      marginLeft: '2px',
-    },
-    input: {
-      width: '100%',
-      padding: '14px 16px',
-      fontSize: '15px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      outline: 'none',
-      transition: 'all 0.2s',
-      background: '#fafafa',
-      boxSizing: 'border-box',
-    },
-    inputFocus: {
-      borderColor: '#6366f1',
-      background: '#ffffff',
-      boxShadow: '0 0 0 4px rgba(99, 102, 241, 0.1)',
-    },
-    inputError: {
-      borderColor: '#ef4444',
-      background: '#fef2f2',
-    },
-    textarea: {
-      width: '100%',
-      padding: '14px 16px',
-      fontSize: '15px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      outline: 'none',
-      transition: 'all 0.2s',
-      background: '#fafafa',
-      resize: 'vertical',
-      minHeight: '100px',
-      fontFamily: 'inherit',
-      boxSizing: 'border-box',
-    },
-    errorText: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      marginTop: '6px',
-      fontSize: '13px',
-      color: '#ef4444',
-    },
-    charCount: {
-      fontSize: '12px',
-      color: '#9ca3af',
-      textAlign: 'right',
-      marginTop: '4px',
-    },
-    selectRow: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '16px',
-    },
-    select: {
-      width: '100%',
-      padding: '14px 16px',
-      fontSize: '15px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      outline: 'none',
-      transition: 'all 0.2s',
-      background: '#fafafa',
-      cursor: 'pointer',
-      appearance: 'none',
-      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-      backgroundPosition: 'right 12px center',
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: '20px',
-      boxSizing: 'border-box',
-    },
-    helpText: {
-      fontSize: '12px',
-      color: '#9ca3af',
-      marginTop: '6px',
-    },
-    footer: {
-      padding: '20px 28px',
-      borderTop: '1px solid rgba(0, 0, 0, 0.06)',
-      display: 'flex',
-      gap: '12px',
-      justifyContent: 'flex-end',
-      background: '#fafafa',
-    },
-    cancelButton: {
-      padding: '12px 24px',
-      fontSize: '15px',
-      fontWeight: '600',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      background: '#ffffff',
-      color: '#4b5563',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-    },
-    submitButton: {
-      padding: '12px 28px',
-      fontSize: '15px',
-      fontWeight: '600',
-      border: 'none',
-      borderRadius: '12px',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-      color: '#ffffff',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-    },
-    submitButtonDisabled: {
-      opacity: 0.6,
-      cursor: 'not-allowed',
-    },
-  };
+  const inputClass = "w-full h-11 px-4 text-sm bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground transition-all";
+  const selectClass = `${inputClass} appearance-none cursor-pointer`;
+  const labelClass = "flex items-center gap-2 text-sm font-semibold text-foreground mb-2";
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={onClose}>
+      <div className="bg-card rounded-2xl max-w-[560px] w-full max-h-[90vh] overflow-hidden shadow-2xl border border-border/50 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        
         {/* Header */}
-        <div style={styles.header}>
-          <h2 style={styles.headerTitle}>
-            {task ? 'Edit Task' : 'Create New Task'}
-          </h2>
-          <button
-            onClick={onClose}
-            style={styles.closeButton}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.1)';
-              e.currentTarget.style.color = '#374151';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
-              e.currentTarget.style.color = '#6b7280';
-            }}
-          >
-            <X size={20} />
-          </button>
+        <div className="px-7 py-6 border-b border-border/50 flex items-center justify-between bg-gradient-to-r from-indigo-500/5 to-purple-500/5">
+          <h2 className="text-xl font-bold text-foreground">{task ? 'Edit Task' : 'Create New Task'}</h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl">
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div style={styles.form}>
+          <div className="p-7 overflow-y-auto max-h-[calc(90vh-160px)] space-y-5">
             {/* Title */}
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}><Tag size={16} /></span>
-                Task Title
-                <span style={styles.required}>*</span>
+            <div>
+              <label className={labelClass}>
+                <Tag className="h-4 w-4 text-indigo-500" />
+                Task Title <span className="text-destructive">*</span>
               </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
+              <Input
+                name="title" value={formData.title} onChange={handleChange}
                 placeholder="Enter task title..."
-                style={{
-                  ...styles.input,
-                  ...(errors.title ? styles.inputError : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.title) {
-                    e.target.style.borderColor = '#6366f1';
-                    e.target.style.background = '#ffffff';
-                    e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.1)';
-                  }
-                }}
-                onBlur={(e) => {
-                  if (!errors.title) {
-                    e.target.style.borderColor = '#e5e7eb';
-                    e.target.style.background = '#fafafa';
-                    e.target.style.boxShadow = 'none';
-                  }
-                }}
+                className={`bg-background/50 border-border/50 ${errors.title ? 'border-destructive focus:ring-destructive/20' : ''}`}
               />
               {errors.title && (
-                <div style={styles.errorText}>
-                  <AlertTriangle size={14} />
-                  {errors.title}
-                </div>
+                <p className="flex items-center gap-1.5 mt-1.5 text-xs text-destructive"><AlertTriangle className="h-3.5 w-3.5" />{errors.title}</p>
               )}
             </div>
 
             {/* Description */}
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                Description
-              </label>
+            <div>
+              <label className={labelClass}>Description</label>
               <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
+                name="description" value={formData.description} onChange={handleChange}
                 placeholder="Add task description (optional)..."
-                style={{
-                  ...styles.textarea,
-                  ...(errors.description ? styles.inputError : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.description) {
-                    e.target.style.borderColor = '#6366f1';
-                    e.target.style.background = '#ffffff';
-                    e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.1)';
-                  }
-                }}
-                onBlur={(e) => {
-                  if (!errors.description) {
-                    e.target.style.borderColor = '#e5e7eb';
-                    e.target.style.background = '#fafafa';
-                    e.target.style.boxShadow = 'none';
-                  }
-                }}
+                className="w-full px-4 py-3 text-sm bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground resize-y min-h-[100px] font-[inherit] transition-all"
               />
-              <div style={styles.charCount}>
-                {formData.description.length}/500 characters
-              </div>
+              <p className="text-[11px] text-muted-foreground text-right mt-1">{formData.description.length}/500</p>
               {errors.description && (
-                <div style={styles.errorText}>
-                  <AlertTriangle size={14} />
-                  {errors.description}
-                </div>
+                <p className="flex items-center gap-1.5 mt-1 text-xs text-destructive"><AlertTriangle className="h-3.5 w-3.5" />{errors.description}</p>
               )}
             </div>
 
-            {/* Status and Priority */}
-            <div style={styles.selectRow}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  style={styles.select}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#6366f1';
-                    e.target.style.background = '#ffffff';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#e5e7eb';
-                    e.target.style.background = '#fafafa';
-                  }}
-                >
+            {/* Status & Priority */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Status</label>
+                <select name="status" value={formData.status} onChange={handleChange} className={selectClass}>
                   <option value="todo">To Do</option>
                   <option value="in-progress">In Progress</option>
                   <option value="done">Done</option>
                 </select>
               </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Priority
-                </label>
-                <select
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  style={styles.select}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#6366f1';
-                    e.target.style.background = '#ffffff';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#e5e7eb';
-                    e.target.style.background = '#fafafa';
-                  }}
-                >
+              <div>
+                <label className={labelClass}>Priority</label>
+                <select name="priority" value={formData.priority} onChange={handleChange} className={selectClass}>
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
@@ -454,160 +142,43 @@ const TaskForm = ({ isOpen, onClose, onSubmit, task, isLoading }) => {
             </div>
 
             {/* Due Date */}
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}><Calendar size={16} /></span>
-                Due Date
-              </label>
-              <input
-                type="date"
-                name="dueDate"
-                value={formData.dueDate}
-                onChange={handleChange}
-                style={styles.input}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#6366f1';
-                  e.target.style.background = '#ffffff';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e5e7eb';
-                  e.target.style.background = '#fafafa';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
+            <div>
+              <label className={labelClass}><Calendar className="h-4 w-4 text-indigo-500" /> Due Date</label>
+              <Input type="date" name="dueDate" value={formData.dueDate} onChange={handleChange} className="bg-background/50 border-border/50" />
             </div>
 
             {/* Assignee */}
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}><User size={16} /></span>
-                Assign To
-              </label>
-              <select
-                name="assignedTo"
-                value={formData.assignedTo}
-                onChange={handleChange}
-                style={styles.select}
-                disabled={usersLoading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#6366f1';
-                  e.target.style.background = '#ffffff';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e5e7eb';
-                  e.target.style.background = '#fafafa';
-                }}
-              >
+            <div>
+              <label className={labelClass}><User className="h-4 w-4 text-indigo-500" /> Assign To</label>
+              <select name="assignedTo" value={formData.assignedTo} onChange={handleChange} disabled={usersLoading} className={selectClass}>
                 <option value="">Unassigned</option>
-                {users.map((member) => (
-                  <option key={member._id} value={member._id}>
-                    {member.name} ({member.email})
-                  </option>
-                ))}
+                {users.map(m => <option key={m._id} value={m._id}>{m.name} ({m.email})</option>)}
               </select>
-              <div style={styles.helpText}>
-                {usersLoading ? 'Loading team members...' : 'Select a team member to assign this task'}
-              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                {usersLoading ? 'Loading team members...' : 'Select a team member'}
+              </p>
             </div>
 
             {/* Tags */}
-            <div style={styles.formGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}><Tag size={16} /></span>
-                Tags
-              </label>
-              <input
-                type="text"
-                name="tags"
-                value={formData.tags}
-                onChange={handleChange}
-                placeholder="design, frontend, urgent..."
-                style={styles.input}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#6366f1';
-                  e.target.style.background = '#ffffff';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e5e7eb';
-                  e.target.style.background = '#fafafa';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              <div style={styles.helpText}>
-                Separate multiple tags with commas
-              </div>
+            <div>
+              <label className={labelClass}><Tag className="h-4 w-4 text-indigo-500" /> Tags</label>
+              <Input name="tags" value={formData.tags} onChange={handleChange} placeholder="design, frontend, urgent..." className="bg-background/50 border-border/50" />
+              <p className="text-[11px] text-muted-foreground mt-1.5">Separate multiple tags with commas</p>
             </div>
           </div>
 
           {/* Footer */}
-          <div style={styles.footer}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={styles.cancelButton}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = '#f9fafb';
-                e.currentTarget.style.borderColor = '#d1d5db';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = '#ffffff';
-                e.currentTarget.style.borderColor = '#e5e7eb';
-              }}
+          <div className="px-7 py-5 border-t border-border/50 flex gap-3 justify-end bg-muted/30">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
+            <Button
+              type="submit" disabled={isLoading}
+              className="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/20 gap-2"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              style={{
-                ...styles.submitButton,
-                ...(isLoading ? styles.submitButtonDisabled : {}),
-              }}
-              onMouseOver={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(99, 102, 241, 0.4)';
-                }
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  {task ? 'Update Task' : 'Create Task'}
-                </>
-              )}
-            </button>
+              {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> {task ? 'Update Task' : 'Create Task'}</>}
+            </Button>
           </div>
         </form>
       </div>
-
-      <style>{`
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

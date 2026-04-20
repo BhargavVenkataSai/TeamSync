@@ -15,6 +15,8 @@ const {
   deleteComment,
   addAttachment,
   deleteAttachment,
+  startTimer,
+  stopTimer,
 } = require('../controllers/taskController');
 const { protect } = require('../middleware/auth');
 const { upload, handleUploadError } = require('../middleware/upload');
@@ -36,5 +38,9 @@ router.delete('/:id/comments/:commentId', deleteComment);
 // Attachments routes
 router.post('/:id/attachments', upload.single('file'), handleUploadError, addAttachment);
 router.delete('/:id/attachments/:attachmentId', deleteAttachment);
+
+// Timer routes
+router.post('/:id/timer/start', startTimer);
+router.post('/:id/timer/stop', stopTimer);
 
 module.exports = router;

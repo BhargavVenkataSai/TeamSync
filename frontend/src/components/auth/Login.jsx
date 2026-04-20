@@ -1,13 +1,10 @@
-// Project: TeamSync - Real-time Task Management
-// File: Login component with modern glassmorphism design
-
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { LogIn, Mail, Lock, Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const Login = ({ onSwitchToRegister }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [focused, setFocused] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error, clearError } = useAuthStore();
 
   const handleChange = (e) => {
@@ -21,356 +18,445 @@ const Login = ({ onSwitchToRegister }) => {
   };
 
   return (
-    <div style={styles.container}>
-      {/* Animated background orbs */}
-      <div style={styles.bgOrb1} />
-      <div style={styles.bgOrb2} />
-      <div style={styles.bgOrb3} />
-      
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(30px, -30px) scale(1.05); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-        input::placeholder { color: rgba(255,255,255,0.35); }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+    <div className="cube-login-page">
+      {/* Floating particles */}
+      <div className="cube-particles">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="cube-particle" style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${i * 1.5}s`,
+            animationDuration: `${8 + Math.random() * 6}s`,
+          }} />
+        ))}
+      </div>
 
-      <div style={styles.wrapper}>
-        {/* Logo Section */}
-        <div style={styles.logoSection}>
-          <div style={styles.logoBox}>
-            <svg style={styles.logoIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-              />
-            </svg>
-            <Sparkles style={styles.sparkle} />
-          </div>
-          <h1 style={styles.title}>TeamSync</h1>
-          <p style={styles.subtitle}>Welcome back! Sign in to continue</p>
+      <div className="cube-form-wrapper">
+        {/* Logo */}
+        <div className="cube-logo">
+          <img src="/teamsync-logo.png" alt="TeamSync" className="cube-logo-img" />
         </div>
 
-        {/* Login Card */}
-        <div style={styles.card}>
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div style={styles.errorBox}>
-                <svg style={{ width: '20px', height: '20px', flexShrink: 0 }} fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {error}
-              </div>
-            )}
+        <h2 className="cube-title">Sign In</h2>
 
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Email Address</label>
-              <div style={styles.inputWrapper}>
-                <Mail style={{
-                  ...styles.inputIcon,
-                  color: focused === 'email' ? '#818cf8' : 'rgba(255,255,255,0.4)',
-                }} />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  onFocus={() => setFocused('email')}
-                  onBlur={() => setFocused('')}
-                  required
-                  placeholder="Enter your email"
-                  style={{
-                    ...styles.input,
-                    border: `2px solid ${focused === 'email' ? 'rgba(99, 102, 241, 0.8)' : 'rgba(255, 255, 255, 0.1)'}`,
-                    boxShadow: focused === 'email' ? '0 0 0 4px rgba(99, 102, 241, 0.15), 0 8px 20px rgba(0,0,0,0.2)' : '0 4px 12px rgba(0,0,0,0.1)',
-                  }}
-                />
-              </div>
-            </div>
+        {error && (
+          <div className="cube-error">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {error}
+          </div>
+        )}
 
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Password</label>
-              <div style={styles.inputWrapper}>
-                <Lock style={{
-                  ...styles.inputIcon,
-                  color: focused === 'password' ? '#818cf8' : 'rgba(255,255,255,0.4)',
-                }} />
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onFocus={() => setFocused('password')}
-                  onBlur={() => setFocused('')}
-                  required
-                  placeholder="Enter your password"
-                  style={{
-                    ...styles.input,
-                    border: `2px solid ${focused === 'password' ? 'rgba(99, 102, 241, 0.8)' : 'rgba(255, 255, 255, 0.1)'}`,
-                    boxShadow: focused === 'password' ? '0 0 0 4px rgba(99, 102, 241, 0.15), 0 8px 20px rgba(0,0,0,0.2)' : '0 4px 12px rgba(0,0,0,0.1)',
-                  }}
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSubmit} className="cube-form">
+          {/* Email Field */}
+          <div className="block-cube block-input">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email address"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
+            />
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg"><div className="bg-inner" /></div>
+          </div>
 
+          {/* Password Field */}
+          <div className="block-cube block-input block-input-password">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              placeholder="Password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+            />
             <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.button,
-                background: loading ? 'rgba(99, 102, 241, 0.5)' : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: loading ? 'none' : '0 10px 30px rgba(99, 102, 241, 0.4)',
-              }}
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {loading ? (
-                <>
-                  <Loader2 style={{ width: '22px', height: '22px', animation: 'spin 1s linear infinite' }} />
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  <LogIn style={{ width: '22px', height: '22px' }} />
-                  Sign In
-                </>
-              )}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
-          </form>
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg"><div className="bg-inner" /></div>
+          </div>
 
-          <p style={styles.switchText}>
-            Don't have an account?{' '}
-            <button onClick={onSwitchToRegister} style={styles.switchButton}>
+          {/* Submit Button */}
+          <button type="submit" className="block-cube block-cube-hover" disabled={loading}>
+            <div className="bg-top"><div className="bg-inner" /></div>
+            <div className="bg-right"><div className="bg-inner" /></div>
+            <div className="bg">
+              <div className="bg-inner" />
+            </div>
+            <div className="cube-btn-text">
+              {loading ? (
+                <><Loader2 size={18} className="animate-spin" /> Signing in...</>
+              ) : (
+                'Log In'
+              )}
+            </div>
+          </button>
+        </form>
+
+        <div className="cube-footer">
+          <p>
+            Don&apos;t have an account?{' '}
+            <button onClick={onSwitchToRegister} className="cube-link">
               Create one
             </button>
           </p>
         </div>
 
-        {/* Features */}
-        <div style={styles.features}>
-          <div style={styles.feature}>
-            <span style={styles.featureIcon}>⚡</span>
-            <span>Real-time sync</span>
-          </div>
-          <div style={styles.feature}>
-            <span style={styles.featureIcon}>👥</span>
-            <span>Team collaboration</span>
-          </div>
-          <div style={styles.feature}>
-            <span style={styles.featureIcon}>📊</span>
-            <span>Kanban boards</span>
-          </div>
+        {/* Feature badges */}
+        <div className="cube-features">
+          <span>⚡ Real-time</span>
+          <span>👥 Teams</span>
+          <span>📊 Kanban</span>
         </div>
       </div>
+
+      <style>{`
+        .cube-login-page {
+          min-height: 100vh;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #1a1a2e;
+          position: relative;
+          overflow: hidden;
+          font-family: 'Geist', 'Inter', monospace, sans-serif;
+        }
+
+        /* Animated particles */
+        .cube-particles {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+        .cube-particle {
+          position: absolute;
+          width: 3px;
+          height: 3px;
+          background: rgba(0, 212, 255, 0.4);
+          border-radius: 50%;
+          bottom: -10px;
+          animation: particleFloat linear infinite;
+        }
+        @keyframes particleFloat {
+          0% { transform: translateY(0) scale(1); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 0.6; }
+          100% { transform: translateY(-100vh) scale(0); opacity: 0; }
+        }
+
+        /* Subtle radial glow behind form */
+        .cube-login-page::before {
+          content: '';
+          position: absolute;
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, rgba(52, 9, 121, 0.15) 0%, transparent 70%);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+        }
+
+        .cube-form-wrapper {
+          width: 340px;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* Logo */
+        .cube-logo {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 32px;
+        }
+        .cube-logo-img {
+          height: 120px;
+          width: auto;
+          filter: brightness(1.8) drop-shadow(0 8px 24px rgba(99, 102, 241, 0.35));
+          transition: transform 0.3s ease;
+        }
+        .cube-logo-img:hover {
+          transform: scale(1.05);
+        }
+
+        /* Title */
+        .cube-title {
+          color: #ffffff;
+          font-family: monospace, serif;
+          font-size: 22px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          margin: 0 0 24px 0;
+        }
+
+        /* Error */
+        .cube-error {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 14px;
+          background: rgba(239, 68, 68, 0.12);
+          border: 1px solid rgba(239, 68, 68, 0.25);
+          border-radius: 8px;
+          color: #f87171;
+          font-size: 13px;
+          margin-bottom: 20px;
+          animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form */
+        .cube-form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        /* ========== 3D CUBE BLOCKS ========== */
+        .block-cube {
+          position: relative;
+          /* transition: transform 0.1s; */
+        }
+
+        .block-cube .bg-top {
+          position: absolute;
+          height: 10px;
+          background: #20203a;
+          bottom: 100%;
+          left: 5px;
+          right: -5px;
+          transform: skew(-45deg, 0);
+          transition: all 0.2s ease-in-out;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-bottom: none;
+        }
+        .block-cube .bg-top .bg-inner {
+          bottom: 0;
+        }
+
+        .block-cube .bg-right {
+          position: absolute;
+          background: #20203a;
+          top: -5px;
+          z-index: 0;
+          bottom: 5px;
+          width: 10px;
+          left: 100%;
+          transform: skew(0, -45deg);
+          transition: all 0.2s ease-in-out;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-left: none;
+        }
+        .block-cube .bg-right .bg-inner {
+          left: 0;
+        }
+
+        .block-cube .bg {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: #20203a;
+          transition: all 0.2s ease-in-out;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          z-index: 1;
+        }
+        .block-cube .bg .bg-inner {
+          top: 0;
+        }
+
+        .block-cube .bg-inner {
+          background: #1a1a2e;
+          position: absolute;
+          left: 2px; right: 2px; top: 2px; bottom: 2px;
+          transition: top 0.2s ease-in-out, bottom 0.2s ease-in-out, left 0.2s ease-in-out;
+        }
+
+        /* ========== INPUT CUBES ========== */
+        .block-input {
+          position: relative;
+        }
+        .block-input input {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          box-sizing: border-box;
+          padding: 14px 16px;
+          border: none;
+          background: transparent;
+          color: #ffffff;
+          font-size: 14px;
+          font-family: monospace, serif;
+          letter-spacing: 0.05em;
+          outline: none;
+        }
+        .block-input input::placeholder {
+          color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Password toggle */
+        .block-input-password {
+          position: relative;
+        }
+        .block-input-password input {
+          padding-right: 44px;
+        }
+        .password-toggle {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          z-index: 3;
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.3);
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: color 0.2s;
+          border-radius: 4px;
+        }
+        .password-toggle:hover {
+          color: rgba(0, 212, 255, 0.8);
+        }
+
+        /* Input focus → fill the cube faces */
+        .block-input input:focus ~ .bg-top,
+        .block-input input:focus ~ .bg-right,
+        .block-input input:focus ~ .bg {
+          border-color: rgba(0, 212, 255, 0.25);
+        }
+        .block-input input:focus ~ .bg-top .bg-inner,
+        .block-input input:focus ~ .bg-right .bg-inner,
+        .block-input input:focus ~ .bg .bg-inner {
+          top: 100%;
+        }
+        .block-input input:focus ~ .bg-right .bg-inner {
+          top: auto;
+          left: 100%;
+        }
+
+        /* ========== BUTTON CUBE ========== */
+        .block-cube-hover {
+          width: 100%;
+          cursor: pointer;
+          position: relative;
+          margin-top: 8px;
+        }
+        .block-cube-hover .cube-btn-text {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 14px 16px;
+          color: #ffffff;
+          font-family: monospace, serif;
+          font-size: 15px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          border: none;
+          background: transparent;
+        }
+
+        .block-cube-hover .bg,
+        .block-cube-hover .bg-top,
+        .block-cube-hover .bg-right {
+          background: linear-gradient(90deg, rgba(52,9,121,1) 0%, rgba(0,212,255,1) 100%);
+          transition: all 0.2s ease-in-out;
+        }
+        .block-cube-hover .bg-inner {
+          background: #1a1a2e;
+          transition: top 0.2s ease-in-out, bottom 0.2s ease-in-out, left 0.2s ease-in-out;
+        }
+
+        /* Button hover → fill the cube */
+        .block-cube-hover:hover .bg .bg-inner,
+        .block-cube-hover:hover .bg-top .bg-inner {
+          top: 100%;
+        }
+        .block-cube-hover:hover .bg-right .bg-inner {
+          left: 100%;
+        }
+        .block-cube-hover:hover .bg,
+        .block-cube-hover:hover .bg-right,
+        .block-cube-hover:hover .bg-top {
+          border-color: rgba(0, 212, 255, 0.4);
+        }
+
+        .block-cube-hover:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* ========== FOOTER ========== */
+        .cube-footer {
+          margin-top: 28px;
+          text-align: center;
+        }
+        .cube-footer p {
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 13px;
+          font-family: monospace, serif;
+          letter-spacing: 0.03em;
+        }
+        .cube-link {
+          background: none;
+          border: none;
+          color: rgba(0, 212, 255, 0.8);
+          cursor: pointer;
+          font-family: monospace, serif;
+          font-size: 13px;
+          font-weight: 600;
+          transition: color 0.2s;
+          text-decoration: none;
+        }
+        .cube-link:hover {
+          color: rgba(0, 212, 255, 1);
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+
+        /* Features */
+        .cube-features {
+          display: flex;
+          justify-content: center;
+          gap: 16px;
+          margin-top: 24px;
+          flex-wrap: wrap;
+        }
+        .cube-features span {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.25);
+          font-family: monospace, serif;
+          letter-spacing: 0.04em;
+          padding: 4px 10px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 100px;
+        }
+      `}</style>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%)',
-    position: 'relative',
-    overflow: 'hidden',
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  },
-  bgOrb1: {
-    position: 'absolute',
-    top: '-20%',
-    left: '-10%',
-    width: '600px',
-    height: '600px',
-    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%)',
-    borderRadius: '50%',
-    filter: 'blur(60px)',
-    animation: 'float 8s ease-in-out infinite',
-  },
-  bgOrb2: {
-    position: 'absolute',
-    bottom: '-20%',
-    right: '-10%',
-    width: '500px',
-    height: '500px',
-    background: 'radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%)',
-    borderRadius: '50%',
-    filter: 'blur(60px)',
-    animation: 'float 10s ease-in-out infinite reverse',
-  },
-  bgOrb3: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '400px',
-    height: '400px',
-    background: 'radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, transparent 70%)',
-    borderRadius: '50%',
-    filter: 'blur(80px)',
-  },
-  wrapper: {
-    width: '100%',
-    maxWidth: '440px',
-    position: 'relative',
-    zIndex: 10,
-  },
-  logoSection: {
-    textAlign: 'center',
-    marginBottom: '32px',
-  },
-  logoBox: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '80px',
-    height: '80px',
-    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-    borderRadius: '24px',
-    marginBottom: '20px',
-    boxShadow: '0 20px 40px rgba(99, 102, 241, 0.4)',
-    position: 'relative',
-  },
-  logoIcon: {
-    width: '40px',
-    height: '40px',
-    color: 'white',
-  },
-  sparkle: {
-    position: 'absolute',
-    top: '-8px',
-    right: '-8px',
-    width: '24px',
-    height: '24px',
-    color: '#fbbf24',
-    filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))',
-  },
-  title: {
-    fontSize: '2.5rem',
-    fontWeight: '800',
-    background: 'linear-gradient(135deg, #fff 0%, #c7d2fe 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    margin: '0 0 8px 0',
-    letterSpacing: '-0.02em',
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: '1rem',
-    margin: 0,
-  },
-  card: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    borderRadius: '24px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    padding: '40px',
-    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
-  },
-  errorBox: {
-    background: 'rgba(239, 68, 68, 0.1)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    color: '#fca5a5',
-    padding: '14px 16px',
-    borderRadius: '12px',
-    fontSize: '0.875rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '24px',
-  },
-  fieldGroup: {
-    marginBottom: '24px',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: '10px',
-    letterSpacing: '0.01em',
-  },
-  inputWrapper: {
-    position: 'relative',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: '16px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    width: '22px',
-    height: '22px',
-    transition: 'color 0.3s ease',
-    pointerEvents: 'none',
-  },
-  input: {
-    width: '100%',
-    padding: '16px 16px 16px 52px',
-    background: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: '14px',
-    fontSize: '1rem',
-    color: '#fff',
-    outline: 'none',
-    transition: 'all 0.3s ease',
-    boxSizing: 'border-box',
-  },
-  button: {
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    color: 'white',
-    padding: '16px 28px',
-    borderRadius: '14px',
-    fontWeight: '600',
-    fontSize: '1rem',
-    border: 'none',
-    transition: 'all 0.3s ease',
-    marginTop: '8px',
-  },
-  switchText: {
-    marginTop: '28px',
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '0.95rem',
-  },
-  switchButton: {
-    color: '#818cf8',
-    fontWeight: '600',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 0,
-    transition: 'color 0.2s',
-  },
-  features: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '24px',
-    marginTop: '32px',
-    flexWrap: 'wrap',
-  },
-  feature: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '0.875rem',
-  },
-  featureIcon: {
-    fontSize: '1.1rem',
-  },
 };
 
 export default Login;

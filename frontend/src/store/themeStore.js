@@ -8,8 +8,10 @@ import { persist } from 'zustand/middleware';
 const applyThemeToDOM = (theme) => {
   document.documentElement.setAttribute('data-theme', theme);
   if (theme === 'dark') {
-    document.body.classList.add('dark-mode');
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark-mode'); // keep for backward compatibility during refactor
   } else {
+    document.documentElement.classList.remove('dark');
     document.body.classList.remove('dark-mode');
   }
 };

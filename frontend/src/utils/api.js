@@ -63,6 +63,9 @@ export const tasksAPI = {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
   deleteAttachment: (taskId, attachmentId) => API.delete(`/tasks/${taskId}/attachments/${attachmentId}`),
+  // Timer
+  startTimer: (taskId) => API.post(`/tasks/${taskId}/timer/start`),
+  stopTimer: (taskId) => API.post(`/tasks/${taskId}/timer/stop`),
 };
 
 // Activities API methods

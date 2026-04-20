@@ -1,26 +1,20 @@
-// Project: TeamSync - Real-time Task Management
-// File: KanbanBoard component with drag and drop
-
 import { useState } from 'react';
 import {
-  DndContext,
-  DragOverlay,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
+  DndContext, DragOverlay, closestCorners, KeyboardSensor,
+  PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { Layout, RefreshCw, Loader2 } from 'lucide-react';
+import { Layout, RefreshCw, Loader2, Search } from 'lucide-react';
 import KanbanColumn from './KanbanColumn';
 import KanbanTaskCard from './KanbanTaskCard';
 import { useTaskStore } from '../../store/taskStore';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 
 const COLUMNS = [
-  { id: 'todo', title: 'To Do', color: '#6b7280', gradient: 'linear-gradient(135deg, #6b7280, #9ca3af)' },
-  { id: 'in-progress', title: 'In Progress', color: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)' },
-  { id: 'done', title: 'Done', color: '#22c55e', gradient: 'linear-gradient(135deg, #22c55e, #4ade80)' },
+  { id: 'todo', title: 'To Do' },
+  { id: 'in-progress', title: 'In Progress' },
+  { id: 'done', title: 'Done' },
 ];
 
 const KanbanBoard = ({ tasks = [], onTaskUpdate, isLoading }) => {
@@ -30,388 +24,128 @@ const KanbanBoard = ({ tasks = [], onTaskUpdate, isLoading }) => {
   const { updateTask, createTask } = useTaskStore();
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const filteredTasks = tasks.filter((task) => {
-    const matchesSearch =
-      !search ||
-      task.title?.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch = !search || 
+      task.title?.toLowerCase().includes(search.toLowerCase()) || 
       task.description?.toLowerCase().includes(search.toLowerCase());
-
-    const matchesAssignee =
-      !assigneeFilter || task.assignedTo?._id === assigneeFilter;
-
+    const matchesAssignee = !assigneeFilter || task.assignedTo?._id === assigneeFilter;
     return matchesSearch && matchesAssignee;
   });
 
   const assignees = Array.from(
-    new Map(
-      tasks
-        .filter((task) => task.assignedTo?._id)
-        .map((task) => [task.assignedTo._id, task.assignedTo])
-    ).values()
+    new Map(tasks.filter((t) => t.assignedTo?._id).map((t) => [t.assignedTo._id, t.assignedTo])).values()
   );
 
-  const getTasksByStatus = (status) => filteredTasks.filter((task) => task.status === status);
+  const getTasksByStatus = (status) => filteredTasks.filter((t) => t.status === status);
 
-  const handleDragStart = (event) => {
-    setActiveId(event.active.id);
-  };
+  const handleDragStart = (event) => setActiveId(event.active.id);
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
+    if (!over) { setActiveId(null); return; }
 
-    if (!over) {
-      setActiveId(null);
-      return;
-    }
-
-    const activeTask = tasks.find((task) => task._id === active.id);
+    const activeTask = tasks.find((t) => t._id === active.id);
     const overId = over.id;
-
-    // Determine new status
-    let newStatus;
-    if (COLUMNS.some((col) => col.id === overId)) {
-      newStatus = overId;
-    } else {
-      const overTask = tasks.find((task) => task._id === overId);
-      newStatus = overTask?.status;
-    }
+    let newStatus = COLUMNS.some((c) => c.id === overId) ? overId : tasks.find((t) => t._id === overId)?.status;
 
     if (activeTask && newStatus && activeTask.status !== newStatus) {
       try {
         await updateTask(activeTask._id, { status: newStatus });
         if (onTaskUpdate) onTaskUpdate();
-      } catch (error) {
-        console.error('Failed to update task:', error);
-      }
+      } catch (error) { console.error('Failed to update task:', error); }
     }
-
     setActiveId(null);
   };
 
-  const handleDragCancel = () => {
-    setActiveId(null);
-  };
-
-  const activeTask = activeId ? tasks.find((task) => task._id === activeId) : null;
+  const handleDragCancel = () => setActiveId(null);
+  const activeTask = activeId ? tasks.find((t) => t._id === activeId) : null;
 
   const handleAddTask = async (status) => {
     const rawTitle = window.prompt('Task title');
     const title = rawTitle?.trim();
+    if (!title) return;
 
-    if (!title) {
-      return;
-    }
-
-    await createTask({
-      title,
-      status,
-      priority: 'medium',
-      description: '',
-      tags: [],
-    });
-
-    if (onTaskUpdate) {
-      onTaskUpdate();
-    }
-  };
-
-  const styles = {
-    container: {
-      minHeight: 'calc(100vh - 200px)',
-    },
-    header: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: '28px',
-      flexWrap: 'wrap',
-      gap: '16px',
-    },
-    headerLeft: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '14px',
-    },
-    headerIcon: {
-      width: '48px',
-      height: '48px',
-      borderRadius: '14px',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)',
-    },
-    title: {
-      fontSize: '24px',
-      fontWeight: '700',
-      color: '#1a1a2e',
-      margin: 0,
-    },
-    subtitle: {
-      fontSize: '14px',
-      color: '#6b7280',
-      marginTop: '4px',
-    },
-    headerRight: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-    },
-    refreshButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '10px 18px',
-      fontSize: '14px',
-      fontWeight: '600',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      background: '#ffffff',
-      color: '#4b5563',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-    },
-    taskCount: {
-      padding: '8px 16px',
-      fontSize: '14px',
-      fontWeight: '600',
-      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))',
-      color: '#6366f1',
-      borderRadius: '20px',
-    },
-    boardContainer: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '24px',
-      minHeight: '600px',
-    },
-    filtersRow: {
-      display: 'flex',
-      gap: '12px',
-      marginBottom: '16px',
-      flexWrap: 'wrap',
-    },
-    filterInput: {
-      flex: 1,
-      minWidth: '220px',
-      padding: '10px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '10px',
-      fontSize: '14px',
-      background: '#fff',
-    },
-    filterSelect: {
-      minWidth: '220px',
-      padding: '10px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '10px',
-      fontSize: '14px',
-      background: '#fff',
-    },
-    '@media (max-width: 1024px)': {
-      boardContainer: {
-        gridTemplateColumns: '1fr',
-      },
-    },
-    loadingOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(255, 255, 255, 0.8)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: '16px',
-      zIndex: 10,
-    },
-    loadingContent: {
-      textAlign: 'center',
-    },
-    loadingText: {
-      marginTop: '12px',
-      fontSize: '14px',
-      color: '#6b7280',
-    },
-    emptyBoard: {
-      gridColumn: '1 / -1',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '60px 20px',
-      background: '#ffffff',
-      borderRadius: '20px',
-      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
-      border: '2px dashed #e5e7eb',
-    },
-    emptyIcon: {
-      width: '80px',
-      height: '80px',
-      borderRadius: '20px',
-      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '20px',
-    },
-    emptyTitle: {
-      fontSize: '18px',
-      fontWeight: '600',
-      color: '#1a1a2e',
-      marginBottom: '8px',
-    },
-    emptyText: {
-      fontSize: '14px',
-      color: '#6b7280',
-      textAlign: 'center',
-      maxWidth: '300px',
-    },
-  };
-
-  // Responsive board container style
-  const getBoardStyle = () => {
-    if (window.innerWidth <= 1024) {
-      return {
-        ...styles.boardContainer,
-        gridTemplateColumns: '1fr',
-        overflowX: 'auto',
-      };
-    }
-    return styles.boardContainer;
+    await createTask({ title, status, priority: 'medium', description: '', tags: [] });
+    if (onTaskUpdate) onTaskUpdate();
   };
 
   return (
-    <div style={styles.container}>
+    <div className="space-y-6 min-h-[calc(100vh-200px)] relative">
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <div style={styles.headerIcon}>
-            <Layout size={24} color="#ffffff" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Layout className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 style={styles.title}>Kanban Board</h2>
-            <p style={styles.subtitle}>Drag and drop to update task status</p>
+            <h2 className="text-2xl font-bold tracking-tight">Kanban Board</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Drag and drop to update task status</p>
           </div>
         </div>
-        <div style={styles.headerRight}>
-          <span style={styles.taskCount}>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <span className="px-4 py-2 text-sm font-semibold bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 rounded-full border border-indigo-500/20">
             {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'}
           </span>
-          <button
-            onClick={onTaskUpdate}
-            disabled={isLoading}
-            style={styles.refreshButton}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#f9fafb';
-              e.currentTarget.style.borderColor = '#d1d5db';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = '#ffffff';
-              e.currentTarget.style.borderColor = '#e5e7eb';
-            }}
-          >
-            <RefreshCw size={16} style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }} />
+          <Button variant="outline" onClick={onTaskUpdate} disabled={isLoading} className="gap-2">
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Board */}
-      <div style={styles.filtersRow}>
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={styles.filterInput}
-        />
-        <select
-          value={assigneeFilter}
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search tasks..." 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)} 
+            className="pl-9 bg-background/50 border-border/50"
+          />
+        </div>
+        <select 
+          value={assigneeFilter} 
           onChange={(e) => setAssigneeFilter(e.target.value)}
-          style={styles.filterSelect}
+          className="h-10 px-3 py-2 text-sm bg-background/50 border border-border/50 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-input text-foreground w-full sm:w-[200px]"
         >
           <option value="">All Assignees</option>
-          {assignees.map((assignee) => (
-            <option key={assignee._id} value={assignee._id}>
-              {assignee.name}
-            </option>
-          ))}
+          {assignees.map((a) => <option key={a._id} value={a._id}>{a.name}</option>)}
         </select>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <div style={getBoardStyle()}>
+      {/* Board */}
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[600px] overflow-x-auto lg:overflow-visible pb-4">
           {filteredTasks.length === 0 && !isLoading ? (
-            <div style={styles.emptyBoard}>
-              <div style={styles.emptyIcon}>
-                <Layout size={36} color="#6366f1" />
+            <div className="col-span-1 lg:col-span-3 flex flex-col items-center justify-center py-20 bg-card rounded-2xl border-2 border-dashed border-border/50 shadow-sm">
+              <div className="w-20 h-20 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-5">
+                <Layout className="w-10 h-10 text-indigo-500" />
               </div>
-              <h3 style={styles.emptyTitle}>No tasks found</h3>
-              <p style={styles.emptyText}>
-                Try changing filters or create a new task in a column
-              </p>
+              <h3 className="text-xl font-bold text-foreground mb-2">No tasks found</h3>
+              <p className="text-muted-foreground text-center max-w-xs">Try changing filters or create a new task in a column</p>
             </div>
           ) : (
-            COLUMNS.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                title={column.title}
-                status={column.id}
-                tasks={getTasksByStatus(column.id)}
-                onAddTask={handleAddTask}
-              />
+            COLUMNS.map((col) => (
+              <KanbanColumn key={col.id} title={col.title} status={col.id} tasks={getTasksByStatus(col.id)} onAddTask={handleAddTask} />
             ))
           )}
         </div>
-
-        <DragOverlay>
-          {activeTask ? (
-            <KanbanTaskCard task={activeTask} isDragging />
-          ) : null}
-        </DragOverlay>
+        <DragOverlay>{activeTask ? <KanbanTaskCard task={activeTask} isDragging /> : null}</DragOverlay>
       </DndContext>
 
-      {/* Loading Overlay */}
       {isLoading && (
-        <div style={styles.loadingOverlay}>
-          <div style={styles.loadingContent}>
-            <Loader2 size={32} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} />
-            <p style={styles.loadingText}>Updating board...</p>
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-2xl z-10">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground font-medium">Updating board...</p>
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @media (max-width: 1024px) {
-          .kanban-board-container {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </div>
   );
 };

@@ -179,4 +179,40 @@ export const useTaskStore = create((set, get) => ({
       tasks: state.tasks.filter(task => task._id !== taskId),
     }));
   },
+
+  // Timer actions
+  startTimer: async (taskId) => {
+    try {
+      const response = await tasksAPI.startTimer(taskId);
+      const updatedTask = response.data.data.task;
+      set((state) => ({
+        tasks: state.tasks.map(task =>
+          task._id === taskId ? { ...task, activeTimerStart: updatedTask.activeTimerStart } : task
+        ),
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Failed to start timer' };
+    }
+  },
+
+  stopTimer: async (taskId) => {
+    try {
+      const response = await tasksAPI.stopTimer(taskId);
+      const updatedTask = response.data.data.task;
+      set((state) => ({
+        tasks: state.tasks.map(task =>
+          task._id === taskId ? { ...task, activeTimerStart: null } : task
+        ),
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Failed to stop timer' };
+    }
+  },
+
+  // Get subtasks for a parent task
+  getSubtasks: (parentId) => {
+    return get().tasks.filter(t => t.parentTaskId === parentId);
+  },
 }));
